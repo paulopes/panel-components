@@ -16,7 +16,7 @@ except NameError:
     IS_A_JUPYTER_NOTEBOOK = False
 
 
-def isNumber(x):
+def is_a_number(x):
     try:
         return bool(0 == x * 0)
     except:

@@ -9,7 +9,7 @@ import panel as pn
 
 from .utils import (
     IS_A_JUPYTER_NOTEBOOK,
-    isNumber,
+    is_a_number,
     clean_path,
     get_inline_js,
     get_inline_css,
@@ -83,7 +83,7 @@ class Component:
 
         self._files_attrs = dict()
         self._files_uris = set()
-        self._asset_folders = set()
+        self._asset_folders = list()
 
         if css_classes:
             if isinstance(css_classes, str):
@@ -99,27 +99,29 @@ class Component:
 
         for attr in self._attributes:
             attr_value = self._attributes[attr]
-            if isinstance(attr_value, str):
-                if attr in ["href", "src"]:
-                    attr_value = attr_value.strip()
-                    attr_schema = attr_value.lower()[:6]
-                    if not (
-                        attr_schema in ["https:", "http:/"]
-                        or attr_schema.startswith("//")
-                    ):
-                        self._files_attrs[attr] = attr_value
-                        self._files_uris.add(attr_value)
-                    attr_value = quote(attr_value)
+            if attr_value:
+                if isinstance(attr_value, str):
+                    if attr in ["href", "src"]:
+                        attr_value = attr_value.strip()
+                        attr_schema = attr_value.lower()[:6]
+                        if not (
+                            attr_schema in ["https:", "http:/"]
+                            or attr_schema.startswith("//")
+                        ):
+                            self._files_attrs[attr] = attr_value
+                            if attr_value[0] not in ["#", "?"]:
+                                self._files_uris.add(attr_value)
+                        # attr_value = quote(attr_value)
+                    else:
+                        attr_value = html.escape(attr_value)
+                elif isinstance(attr_value, bool):
+                    attr_value = "" if attr_value else None
+                elif is_a_number(attr_value):
+                    attr_value = str(attr_value)
                 else:
-                    attr_value = html.escape(attr_value)
-            elif isinstance(attr_value, bool):
-                attr_value = "" if attr_value else None
-            elif isNumber(attr_value):
-                attr_value = str(attr_value)
-            else:
-                attr_value = None
-            if attr_value is not None:
-                self._attributes[attr] = attr_value
+                    attr_value = None
+                if attr_value is not None:
+                    self._attributes[attr] = attr_value
 
     def append_head_no_nb_css(self, **files):
         self._append_head_no_nb_css.update(files)
@@ -247,13 +249,13 @@ class Component:
 
     def asset_folders(self, *folders):
         for folder in folders:
-            self._asset_folders.add(folder.strip())
+            self._asset_folders.append(folder.strip())
         return self
 
     def get_asset_folders(self):
         asset_folders = self._asset_folders.copy()
         for child in self.children:
-            asset_folders = asset_folders.union(child.get_asset_folders())
+            asset_folders = child.get_asset_folders() + asset_folders
         return asset_folders
 
     def prepend_html(self, markup):
@@ -268,6 +270,7 @@ class Component:
 
     def _append_panel_child(self, child):
         child_id = "panel_" + str(uuid.uuid4().hex)
+        print("PANEL", child)
         child_component = Component()
         child_component.append_html(r"{{ embed(roots." + child_id + r") }}")
         self.children.append(child_component)
@@ -283,7 +286,7 @@ class Component:
                             self.children.append(sub_child)
                         elif isinstance(sub_child, str):
                             self._append_html_child(sub_child)
-                        else:
+                        elif sub_child:
                             self._append_panel_child(sub_child)
                 elif isinstance(child, Component):
                     self.children.append(child)
