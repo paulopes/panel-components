@@ -29,7 +29,7 @@ def clean_path(path=None):
         return "/".join(
             [
                 dir
-                for dir in path.strip().strip("/").split("/")
+                for dir in path.strip().rstrip("/").split("/")
                 if len(dir) > 0 and dir[0] != "."
             ]
         )
@@ -67,7 +67,7 @@ def make_available(filename, src_folder, dst_folder, asset_folders):
 
     file_path_elements = [
         element
-        for element in filename.strip("/").split("/")
+        for element in filename.rstrip("/").split("/")
         if len(element) > 0 and element[0] != "."
     ]
     dst_folder = os.sep.join([dst_folder] + file_path_elements[:-1])
@@ -90,9 +90,11 @@ def make_available(filename, src_folder, dst_folder, asset_folders):
             for folder in asset_folders:
                 folder_path_elements = [
                     element
-                    for element in folder.strip("/").split("/")
+                    for element in folder.rstrip("/").split("/")
                     if len(element) > 0 and element[0] != "."
                 ]
+                if folder[0] == '/':
+                    folder_path_elements[0] = '/' + folder_path_elements[0]
                 src_file = os.path.join(*folder_path_elements, *file_path_elements)
                 if os.path.isfile(src_file):
                     src_exists = True
