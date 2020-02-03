@@ -270,7 +270,6 @@ class Component:
 
     def _append_panel_child(self, child):
         child_id = "panel_" + str(uuid.uuid4().hex)
-        print("PANEL", child)
         child_component = Component()
         child_component.append_html(r"{{ embed(roots." + child_id + r") }}")
         self.children.append(child_component)
@@ -282,12 +281,15 @@ class Component:
             for child in args:
                 if isinstance(child, tuple):
                     for sub_child in child:
-                        if isinstance(sub_child, Component):
-                            self.children.append(sub_child)
-                        elif isinstance(sub_child, str):
-                            self._append_html_child(sub_child)
-                        elif sub_child:
-                            self._append_panel_child(sub_child)
+                        if sub_child is not None:
+                            if isinstance(sub_child, Component):
+                                self.children.append(sub_child)
+                            elif isinstance(sub_child, str):
+                                self._append_html_child(sub_child)
+                            elif is_a_number(sub_child):
+                                self._append_html_child(str(sub_child))
+                            else:
+                                self._append_panel_child(sub_child)
                 elif isinstance(child, Component):
                     self.children.append(child)
                 elif isinstance(child, str):
