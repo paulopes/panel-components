@@ -55,8 +55,7 @@ class Component:
         self._dst_folder = "static"
 
         self.children = list()
-
-        self._attributes = dict()
+        self.attributes = dict()
 
         self._pre_html = ""
 
@@ -91,14 +90,28 @@ class Component:
             css_classes_set = set(css_classes)
             css_classes_set.discard("")
             css_classes_set.discard(None)
-            self._attributes["class"] = html.escape(" ".join(css_classes_set))
-        if attributes:
-            self._attributes.update(attributes)
-        if kwargs:
-            self._attributes.update(kwargs)
+            self.css_classes = css_classes_set
+            self.attributes["class"] = html.escape(" ".join(css_classes_set))
+        else:
+            self.css_classes = set()
 
-        for attr in self._attributes:
-            attr_value = self._attributes[attr]
+        if attributes:
+            self.attributes.update(attributes)
+            if "class" in attributes:
+                self.css_classes = self.css_classes.union(
+                    set(attributes["class"].split())
+                )
+                self.attributes["class"] = html.escape(" ".join(css_classes_set))
+        if kwargs:
+            self.attributes.update(kwargs)
+            if "class" in kwargs:
+                self.css_classes = self.css_classes.union(
+                    set(kwargs["class"].split())
+                )
+                self.attributes["class"] = html.escape(" ".join(css_classes_set))
+
+        for attr in self.attributes:
+            attr_value = self.attributes[attr]
             if attr_value:
                 if isinstance(attr_value, str):
                     if attr in ["href", "src"]:
@@ -121,7 +134,7 @@ class Component:
                 else:
                     attr_value = None
                 if attr_value is not None:
-                    self._attributes[attr] = attr_value
+                    self.attributes[attr] = attr_value
 
     def append_head_no_nb_css(self, **files):
         self._append_head_no_nb_css.update(files)
@@ -304,8 +317,8 @@ class Component:
 
     def get_attributes(self, main, asset_folders):
         attributes = ""
-        for attr in self._attributes:
-            attr_value = self._attributes[attr]
+        for attr in self.attributes:
+            attr_value = self.attributes[attr]
 
             if attr in self._files_attrs:
                 if main:
