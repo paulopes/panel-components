@@ -71,6 +71,7 @@ class Component:
         self._panel_raw_css = dict()
 
         self._panels = dict()
+        self._no_panel_spacer = ""
 
         self._append_body_js = dict()
         self._append_body_script = dict()
@@ -551,6 +552,7 @@ class Component:
     {% block contents %}
 """
             + self._repr_html_(asset_folders=asset_folders)
+            + self._no_panel_spacer
             + """
     {% endblock %}
     {{ plot_script | indent(8) }}
@@ -573,6 +575,7 @@ class Component:
 """
             + self._get_template_contents_top(asset_folders)
             + self._repr_html_(asset_folders=asset_folders)
+            + self._no_panel_spacer
             + self._get_template_contents_bottom(asset_folders)
             + """
 {% endblock %}
@@ -588,27 +591,31 @@ class Component:
                 dst_folder=self._dst_folder,
                 asset_folders=asset_folders
             )
+        self._no_panel_spacer = ""
         panels = self.get_panels()
-        if panels:
-            tmpl = pn.Template(
-                self._get_template(asset_folders),
-                nb_template=self._get_nb_template(asset_folders),
-            )
-            for panel in panels:
-                tmpl.add_panel(panel, panels[panel])
+        if not panels:
+            pn.extension()
+            child_id = "panel_" + str(uuid.uuid4().hex)
+            self._no_panel_spacer = r"{{ embed(roots." + child_id + r") }}"
+            panels[child_id] = pn.Spacer()
 
-            panel_css_files = self.get_panel_css_files()
-            if panel_css_files:
-                pn.extension(css_files=list(panel_css_files.values()))
+        tmpl = pn.Template(
+            self._get_template(asset_folders),
+            nb_template=self._get_nb_template(asset_folders),
+        )
+        for panel in panels:
+            tmpl.add_panel(panel, panels[panel])
 
-            panel_raw_css = self.get_panel_raw_css()
-            if panel_raw_css:
-                pn.extension(raw_css=list(panel_raw_css.values()))
+        panel_css_files = self.get_panel_css_files()
+        if panel_css_files:
+            pn.extension(css_files=list(panel_css_files.values()))
 
-            tmpl.servable(title=self.title)
-            return tmpl
-        else:
-            return self
+        panel_raw_css = self.get_panel_raw_css()
+        if panel_raw_css:
+            pn.extension(raw_css=list(panel_raw_css.values()))
+
+        tmpl.servable(title=self.title)
+        return tmpl
 
     def get_html(self, main, asset_folders):
         tag_name = self._tag_name
