@@ -23,6 +23,12 @@ def is_a_number(x):
         return False
 
 
+def get_dir_name(folder=None):
+    if not folder:
+        folder = os.getcwd()
+    return folder.replace("/", os.sep).rstrip(os.sep).split(os.sep)[-1]
+
+
 def clean_path(path=None):
     if path:
         # Make sure that no root / or upper .. directory names are included.
@@ -93,8 +99,8 @@ def make_available(filename, src_folder, dst_folder, asset_folders):
                     for element in folder.rstrip("/").split("/")
                     if len(element) > 0 and element[0] != "."
                 ]
-                if folder[0] == '/':
-                    folder_path_elements[0] = '/' + folder_path_elements[0]
+                if folder[0] == "/":
+                    folder_path_elements[0] = "/" + folder_path_elements[0]
                 src_file = os.path.join(*folder_path_elements, *file_path_elements)
                 if os.path.isfile(src_file):
                     src_exists = True

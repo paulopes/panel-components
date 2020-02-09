@@ -10,6 +10,7 @@ import panel as pn
 from .utils import (
     IS_A_JUPYTER_NOTEBOOK,
     is_a_number,
+    get_dir_name,
     clean_path,
     get_inline_js,
     get_inline_css,
@@ -114,6 +115,7 @@ class Component:
 
         for attr in self.attributes:
             attr_value = self.attributes[attr]
+            attr = attr.replace("_", "-")
             if attr_value:
                 if isinstance(attr_value, str):
                     if attr in ["href", "src"]:
@@ -137,6 +139,10 @@ class Component:
                     attr_value = None
                 if attr_value is not None:
                     self.attributes[attr] = attr_value
+                    
+        if main is True:  # Instead of just truthy
+            main = get_dir_name()  # Use current directory's name
+            
         if children:
             self.append_children(*children)
 
