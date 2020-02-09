@@ -28,7 +28,6 @@ class Component:
     """Encapsulates all the html content, css and js requirements, as well as
     methods that assist in creating and generating a template (or html partial)
     for a component of a page that will served by a Panel server."""
-
     def __init__(
         self,
         *children,
@@ -36,9 +35,8 @@ class Component:
         xml_closing_style=False,
         title=None,
         main=None,
-        attributes=None,
         css_classes=None,
-        **kwargs
+        **attributes
     ):
         self._tag_name = tag_name
         self._xml_closing_style = xml_closing_style
@@ -87,32 +85,71 @@ class Component:
         self._files_uris = set()
         self._asset_folders = list()
 
+        self.css_classes = set()
         if css_classes:
-            if isinstance(css_classes, str):
-                css_classes = css_classes.split()
-            css_classes_set = set(css_classes)
-            css_classes_set.discard("")
-            css_classes_set.discard(None)
-            self.css_classes = css_classes_set
-            self.attributes["class"] = html.escape(" ".join(css_classes_set))
-        else:
-            self.css_classes = set()
+            self.add_classes(*css_classes)
 
         if attributes:
-            self.attributes.update(attributes)
-            if "class" in attributes:
-                self.css_classes = self.css_classes.union(
-                    set(attributes["class"].split())
-                )
-                self.attributes["class"] = html.escape(" ".join(css_classes_set))
-        if kwargs:
-            self.attributes.update(kwargs)
-            if "class" in kwargs:
-                self.css_classes = self.css_classes.union(
-                    set(kwargs["class"].split())
-                )
-                self.attributes["class"] = html.escape(" ".join(css_classes_set))
+            self.add_attributes(**attributes)
+        #     if "class" in attributes:
+        #         self.add_classes(attributes["class"])
+        #         del attributes["class"]
+        #     self.attributes.update(attributes)
 
+        # for attr in self.attributes:
+        #     attr_value = self.attributes[attr]
+        #     attr = attr.replace("_", "-")
+        #     if attr_value:
+        #         if isinstance(attr_value, str):
+        #             if attr in ["href", "src"]:
+        #                 attr_value = attr_value.strip()
+        #                 attr_schema = attr_value.lower()[:6]
+        #                 if not (
+        #                     attr_schema in ["https:", "http:/"]
+        #                     or attr_schema.startswith("//")
+        #                 ):
+        #                     self._files_attrs[attr] = attr_value
+        #                     if attr_value[0] not in ["#", "?"]:
+        #                         self._files_uris.add(attr_value)
+        #                 # attr_value = quote(attr_value)
+        #             else:
+        #                 attr_value = html.escape(attr_value)
+        #         elif isinstance(attr_value, bool):
+        #             attr_value = "" if attr_value else None
+        #         elif is_a_number(attr_value):
+        #             attr_value = str(attr_value)
+        #         else:
+        #             attr_value = None
+        #         if attr_value is not None:
+        #             self.attributes[attr] = attr_value
+                    
+        if main is True:  # Instead of just truthy
+            main = get_dir_name()  # Use current directory's name
+            
+        if children:
+            self.add_children(*children)
+
+    def add_classes(self, *css_classes):
+        css_classes_set = set()
+        for css_class in css_classes:
+            if isinstance(css_class, str):
+                css_class = css_class.split()
+            if css_class:
+                css_classes_set = css_classes_set.union(
+                    set(tuple(css_class))
+                )
+        css_classes_set.discard("")
+        css_classes_set.discard(None)
+        self.css_classes = self.css_classes.union(css_classes_set)
+        return self
+
+    def add_attributes(self, **attributes):
+        if attributes:
+            if "class" in attributes:
+                self.add_classes(attributes["class"])
+                del attributes["class"]
+            self.attributes.update(attributes)
+        
         for attr in self.attributes:
             attr_value = self.attributes[attr]
             attr = attr.replace("_", "-")
@@ -139,12 +176,8 @@ class Component:
                     attr_value = None
                 if attr_value is not None:
                     self.attributes[attr] = attr_value
-                    
-        if main is True:  # Instead of just truthy
-            main = get_dir_name()  # Use current directory's name
-            
-        if children:
-            self.append_children(*children)
+
+        return self
 
     def append_head_no_nb_css(self, **files):
         self._append_head_no_nb_css.update(files)
@@ -172,12 +205,6 @@ class Component:
             set(itertools.chain.from_iterable(classes_no_spaces))
         )
         return self
-
-    def get_body_classes(self):
-        body_classes = self._body_classes.copy()
-        for child in self.children:
-            body_classes = body_classes.union(child.get_body_classes())
-        return body_classes
 
     def prepend_body_css(self, **files):
         self._prepend_body_css.update(files)
@@ -299,7 +326,7 @@ class Component:
         self._panels[child_id] = child
         return self
 
-    def append_children(self, *args):
+    def add_children(self, *args):
         if args:
             for child in args:
                 if isinstance(child, tuple):
@@ -317,6 +344,8 @@ class Component:
                     self.children.append(child)
                 elif isinstance(child, str):
                     self._append_html_child(child)
+                elif is_a_number(child):
+                    self._append_html_child(str(child))
                 elif child:
                     self._append_panel_child(child)
         return self
@@ -350,6 +379,11 @@ class Component:
                     attributes += " {}".format(attr)
                 else:
                     attributes += ' {}="{}"'.format(attr, attr_value)
+                    
+        if self.css_classes:
+            attributes += ' class="{}"'.format(
+                html.escape(" ".join(self.css_classes))
+            )
         return attributes
 
     def get_panels(self):
@@ -407,9 +441,9 @@ class Component:
         return template
 
     def _get_template_body_classes_attr(self):
-        classes = self.get_body_classes()
-        if classes:
-            return ' class="' + " ".join(classes) + '"'
+        # classes = self.get_body_classes()
+        if self._body_classes:
+            return ' class="' + " ".join(self._body_classes) + '"'
         else:
             return ""
 
