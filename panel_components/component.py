@@ -30,6 +30,7 @@ class Component:
 
     def __init__(
         self,
+        *children,
         tag_name=None,
         xml_closing_style=False,
         title=None,
@@ -136,6 +137,8 @@ class Component:
                     attr_value = None
                 if attr_value is not None:
                     self.attributes[attr] = attr_value
+        if children:
+            self.append_children(*children)
 
     def append_head_no_nb_css(self, **files):
         self._append_head_no_nb_css.update(files)
@@ -309,7 +312,7 @@ class Component:
                 elif isinstance(child, str):
                     self._append_html_child(child)
                 elif child:
-                    self.append_panel_child(child)
+                    self._append_panel_child(child)
         return self
 
     def append_html(self, markup):

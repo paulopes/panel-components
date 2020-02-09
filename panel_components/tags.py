@@ -291,12 +291,11 @@ def make_tag_function(tag_name):
 
     def tag_function(*children, **attributes):
         component = Component(
-            tag_name,
+            *children,
+            tag_name=tag_name,
             xml_closing_style=(tag_name in xml_closing_style_tags),
             **attributes
         )
-        if children:
-            component.append_children(children)
         return component
 
     return tag_function
