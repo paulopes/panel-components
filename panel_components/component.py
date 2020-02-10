@@ -15,13 +15,15 @@ from .utils import (
     get_inline_js,
     get_inline_css,
     make_available,
+    can_make_inline_uri,
     make_inline_uri,
 )
 
 try:
-    from urllib.parse import quote
+    from urllib.parse import quote, urlsplit
 except:
     from urllib import quote
+    from urlparse import urlsplit
 
 
 class Component:
@@ -87,41 +89,12 @@ class Component:
 
         self.css_classes = set()
         if css_classes:
+            if isinstance(css_classes, str):
+                css_classes = css_classes.split()
             self.add_classes(*css_classes)
 
         if attributes:
             self.add_attributes(**attributes)
-        #     if "class" in attributes:
-        #         self.add_classes(attributes["class"])
-        #         del attributes["class"]
-        #     self.attributes.update(attributes)
-
-        # for attr in self.attributes:
-        #     attr_value = self.attributes[attr]
-        #     attr = attr.replace("_", "-")
-        #     if attr_value:
-        #         if isinstance(attr_value, str):
-        #             if attr in ["href", "src"]:
-        #                 attr_value = attr_value.strip()
-        #                 attr_schema = attr_value.lower()[:6]
-        #                 if not (
-        #                     attr_schema in ["https:", "http:/"]
-        #                     or attr_schema.startswith("//")
-        #                 ):
-        #                     self._files_attrs[attr] = attr_value
-        #                     if attr_value[0] not in ["#", "?"]:
-        #                         self._files_uris.add(attr_value)
-        #                 # attr_value = quote(attr_value)
-        #             else:
-        #                 attr_value = html.escape(attr_value)
-        #         elif isinstance(attr_value, bool):
-        #             attr_value = "" if attr_value else None
-        #         elif is_a_number(attr_value):
-        #             attr_value = str(attr_value)
-        #         else:
-        #             attr_value = None
-        #         if attr_value is not None:
-        #             self.attributes[attr] = attr_value
                     
         if main is True:  # Instead of just truthy
             main = get_dir_name()  # Use current directory's name
@@ -130,14 +103,7 @@ class Component:
             self.add_children(*children)
 
     def add_classes(self, *css_classes):
-        css_classes_set = set()
-        for css_class in css_classes:
-            if isinstance(css_class, str):
-                css_class = css_class.split()
-            if css_class:
-                css_classes_set = css_classes_set.union(
-                    set(tuple(css_class))
-                )
+        css_classes_set = set(css_classes)
         css_classes_set.discard("")
         css_classes_set.discard(None)
         self.css_classes = self.css_classes.union(css_classes_set)
@@ -155,7 +121,7 @@ class Component:
             attr = attr.replace("_", "-")
             if attr_value:
                 if isinstance(attr_value, str):
-                    if attr in ["href", "src"]:
+                    if attr in ["href", "src"]:                        
                         attr_value = attr_value.strip()
                         attr_schema = attr_value.lower()[:6]
                         if not (
@@ -163,8 +129,9 @@ class Component:
                             or attr_schema.startswith("//")
                         ):
                             self._files_attrs[attr] = attr_value
-                            if attr_value[0] not in ["#", "?"]:
-                                self._files_uris.add(attr_value)
+                            attr_url = urlsplit(attr_value).geturl()
+                            if can_make_inline_uri(attr_url):
+                                self._files_uris.add(attr)
                         # attr_value = quote(attr_value)
                     else:
                         attr_value = html.escape(attr_value)
@@ -363,17 +330,21 @@ class Component:
                 if main:
                     self.files_uris(attr_value)
                 if not main or IS_A_JUPYTER_NOTEBOOK:
-                    attr_value = make_inline_uri(
-                        attr_value,
-                        self._src_folder,
-                        self._dst_folder,
-                        asset_folders=asset_folders
-                    )
+                    if attr in self._files_uris:
+                        attr_url = urlsplit(attr_value).geturl()
+                        uri_value = make_inline_uri(
+                            attr_url,
+                            self._src_folder,
+                            self._dst_folder,
+                            asset_folders=asset_folders
+                        )
+                        if uri_value:
+                            attr_value = uri_value
                 else:
                     attr_value = quote(
                         "{}/{}/{}".format(main, self._dst_folder, attr_value)
                     )
-
+                                   
             if attr_value is not None:
                 if len(attr_value) == 0:
                     attributes += " {}".format(attr)

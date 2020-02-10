@@ -110,7 +110,24 @@ def make_available(filename, src_folder, dst_folder, asset_folders):
             shutil.copyfile(src_file, dst_file)
 
 
+def can_make_inline_uri(src_file):
+    file_format = src_file.rstrip().split(".")[-1].lower()
+    return file_format in {
+        "png",
+        "gif",
+        "jpg",
+        "jpeg",
+        "svg",
+        "ttf",
+        "otf",
+        "woff",
+        "woff2",
+        "eot",
+    }
+
+
 def make_inline_uri(src_file, src_folder, dst_folder, asset_folders=None):
+    src_file = src_file.strip()
     if src_file in make_inline_uri.memo:
         return make_inline_uri.memo[src_file]
 
@@ -155,12 +172,14 @@ def make_inline_uri(src_file, src_folder, dst_folder, asset_folders=None):
             file_format = src_file.split(".")[-1].lower()
             if file_format == "jpg":
                 file_format = "jpeg"
-            if file_format in ["png", "gif", "jpeg"]:
+            if file_format in {"png", "gif", "jpeg"}:
                 uri_start = "data:image/{};charset=utf8;base64,".format(file_format)
-            else:
+            elif file_format in {"ttf", "otf", "woff", "woff2", "eot"}:
                 uri_start = "data:application/x-font-{};charset=utf8;base64,".format(
                     file_format
                 )
+            else:
+                return ""
             base64encoded = base64.b64encode(open(src_file, "rb").read())
             return_value = uri_start + base64encoded.decode()
         make_inline_uri.memo[memo_key] = return_value
