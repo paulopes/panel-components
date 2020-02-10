@@ -20,9 +20,8 @@ from .utils import (
 )
 
 try:
-    from urllib.parse import quote, urlsplit
+    from urllib.parse import urlsplit
 except:
-    from urllib import quote
     from urlparse import urlsplit
 
 
@@ -132,7 +131,6 @@ class Component:
                             attr_url = urlsplit(attr_value).geturl()
                             if can_make_inline_uri(attr_url):
                                 self._files_uris.add(attr)
-                        # attr_value = quote(attr_value)
                     else:
                         attr_value = html.escape(attr_value)
                 elif isinstance(attr_value, bool):
@@ -341,9 +339,7 @@ class Component:
                         if uri_value:
                             attr_value = uri_value
                 else:
-                    attr_value = quote(
-                        "{}/{}/{}".format(main, self._dst_folder, attr_value)
-                    )
+                    attr_value = "{}/{}/{}".format(main, self._dst_folder, attr_value)
                                    
             if attr_value is not None:
                 if len(attr_value) == 0:
