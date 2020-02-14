@@ -127,10 +127,11 @@ class Component:
                             attr_schema in ["https:", "http:/"]
                             or attr_schema.startswith("//")
                         ):
-                            self._files_attrs[attr] = attr_value
                             attr_url = urlsplit(attr_value).geturl()
-                            if can_make_inline_uri(attr_url):
-                                self._files_uris.add(attr)
+                            if attr_url:
+                                self._files_attrs[attr] = attr_url
+                                if can_make_inline_uri(attr_url):
+                                    self._files_uris.add(attr_value)
                     else:
                         attr_value = html.escape(attr_value)
                 elif isinstance(attr_value, bool):
@@ -328,25 +329,31 @@ class Component:
                 if main:
                     self.files_uris(attr_value)
                 if not main or IS_A_JUPYTER_NOTEBOOK:
-                    if attr in self._files_uris:
+                    if attr_value in self._files_uris:
                         attr_url = urlsplit(attr_value).geturl()
-                        uri_value = make_inline_uri(
-                            attr_url,
-                            self._src_folder,
-                            self._dst_folder,
-                            asset_folders=asset_folders
-                        )
-                        if uri_value:
-                            attr_value = uri_value
+                        if attr_url:
+                            uri_value = make_inline_uri(
+                                attr_url,
+                                self._src_folder,
+                                self._dst_folder,
+                                asset_folders=asset_folders
+                            )
+                            if uri_value:
+                                attr_value = uri_value
                 else:
-                    attr_value = "{}/{}/{}".format(main, self._dst_folder, attr_value)
+                    if len(attr_value) is not 0 and attr is "src":
+                        attr_value = "{}/{}/{}".format(main, self._dst_folder, attr_value)
+                    elif len(attr_value) is 0:
+                        attributes += " {}".format(attr)
+                    else:
+                        attributes += ' {}="{}"'.format(attr, attr_value)
                                    
             if attr_value is not None:
-                if len(attr_value) == 0:
+                if len(attr_value) is 0:
                     attributes += " {}".format(attr)
                 else:
                     attributes += ' {}="{}"'.format(attr, attr_value)
-                    
+                            
         if self.css_classes:
             attributes += ' class="{}"'.format(
                 html.escape(" ".join(self.css_classes))
