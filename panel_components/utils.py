@@ -23,6 +23,10 @@ def is_a_number(x):
         return False
 
 
+def template_escape(text):
+    return text.replace("{{", "{{'{{'}}").replace("{%", "{{'{%'}}")
+
+
 def get_dir_name(folder=None):
     if not folder:
         folder = os.getcwd()

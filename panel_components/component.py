@@ -10,6 +10,7 @@ import panel as pn
 from .utils import (
     IS_A_JUPYTER_NOTEBOOK,
     is_a_number,
+    template_escape,
     get_dir_name,
     clean_path,
     get_inline_js,
@@ -275,7 +276,7 @@ class Component:
         return asset_folders
 
     def prepend_html(self, markup):
-        self._pre_html += markup
+        self._pre_html += template_escape(markup)
         return self
 
     def _append_html_child(self, child):
@@ -287,7 +288,7 @@ class Component:
     def _append_panel_child(self, child):
         child_id = "panel_" + str(uuid.uuid4().hex)
         child_component = Component()
-        child_component.append_html(r"{{ embed(roots." + child_id + r") }}")
+        self._post_html += r"{{ embed(roots." + child_id + r") }}"
         self.children.append(child_component)
         self._panels[child_id] = child
         return self
@@ -317,7 +318,7 @@ class Component:
         return self
 
     def append_html(self, markup):
-        self._post_html += markup
+        self._post_html += template_escape(markup)
         return self
 
     def get_attributes(self, main, asset_folders):
@@ -551,7 +552,7 @@ class Component:
     {% endblock %}
     {% block postamble %}
 """
-            + self._get_template_head_no_nb(asset_folders)
+            + template_escape(self._get_template_head_no_nb(asset_folders))
             + """
     {% endblock %}
     {% endblock %}
@@ -560,10 +561,10 @@ class Component:
 
 {% block body %}
 <body"""
-            + self._get_template_body_classes_attr()
+            + template_escape(self._get_template_body_classes_attr())
             + """>
 """
-            + self._get_template_contents_top(asset_folders)
+            + template_escape(self._get_template_contents_top(asset_folders))
             + """
     {% block inner_body %}
     {% block contents %}
@@ -574,8 +575,8 @@ class Component:
     {% endblock %}
     {{ plot_script | indent(8) }}
 """
-            + self._get_template_contents_bottom(asset_folders)
-            + self._get_template_contents_bottom_no_nb(asset_folders)
+            + template_escape(self._get_template_contents_bottom(asset_folders))
+            + template_escape(self._get_template_contents_bottom_no_nb(asset_folders))
             + """
     {% endblock %}
 </body>
@@ -590,10 +591,10 @@ class Component:
 
 {% block contents %}
 """
-            + self._get_template_contents_top(asset_folders)
+            + template_escape(self._get_template_contents_top(asset_folders))
             + self._repr_html_(asset_folders=asset_folders)
             + self._no_panel_spacer
-            + self._get_template_contents_bottom(asset_folders)
+            + template_escape(self._get_template_contents_bottom(asset_folders))
             + """
 {% endblock %}
 """
