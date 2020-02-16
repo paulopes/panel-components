@@ -97,7 +97,7 @@ def make_available(filename, src_folder, dst_folder, asset_folders):
         if os.path.isfile(src_file):
             src_exists = True
         elif asset_folders:
-            for folder in asset_folders:
+            for folder in reversed(asset_folders):
                 folder_path_elements = [
                     element
                     for element in folder.rstrip("/").split("/")
@@ -153,7 +153,7 @@ def make_inline_uri(src_file, src_folder, dst_folder, asset_folders=None):
         if os.path.isfile(src_file):
             src_exists = True
         elif asset_folders:
-            for folder in asset_folders:
+            for folder in reversed(asset_folders):
                 folder_path_elements = [
                     element
                     for element in folder.strip("/").split("/")
