@@ -5,7 +5,7 @@ import sys
 from .component import Component
 
 
-def file(filename, *children, **attributes):
+def file_include(filename, *children, **attributes):
     component = Component(*children, **attributes)
     with open(filename) as f:
         file_contents = f.read()
