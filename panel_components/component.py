@@ -35,6 +35,7 @@ class Component:
         *children,
         tag_name=None,
         xml_closing_style=False,
+        auto_id=False,
         title=None,
         main=None,
         css_classes=None,
@@ -95,7 +96,13 @@ class Component:
 
         if attributes:
             self.add_attributes(**attributes)
-                    
+
+        if auto_id:
+            self.id = "id" + str(uuid.uuid4().hex)
+            self.attributes["id"] = self.id
+        else:
+            self.id = ""
+
         if main is True:  # Instead of just truthy
             main = get_dir_name()  # Use current directory's name
             
