@@ -7,7 +7,7 @@ from .component import Component
 from .tags import div, script
 
 
-def vue_app(template, *children, data={}, **attributes):
+def vue_app(*children, template="", data={}, **attributes):
 
     # Vue.js app
     app_tag = div(auto_id=True)
