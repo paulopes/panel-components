@@ -116,14 +116,14 @@ class Component:
         return self
 
     def add_attributes(self, **attributes):
+
         if attributes:
             if "class" in attributes:
                 self.add_classes(attributes["class"])
                 del attributes["class"]
-            self.attributes.update(attributes)
         
-        for attr in self.attributes:
-            attr_value = self.attributes[attr]
+        for attr in attributes:
+            attr_value = attributes[attr]
             if attr_value is True:
                 attr_value = "true"
             elif attr_value is False:
