@@ -33,27 +33,7 @@ def get_dir_name(folder=None):
     return folder.replace("/", os.sep).rstrip(os.sep).split(os.sep)[-1]
 
 
-def clean_path(path=None):
-    if path:
-        # Make sure that no root / or upper .. directory names are included.
-        return "/".join(
-            [
-                dir
-                for dir in path.strip().rstrip("/").split("/")
-                if len(dir) > 0 and dir[0] != "."
-            ]
-        )
-    else:
-        return ""
-
-
-def _read_file(filename, folder):
-    src_path = os.path.join(folder, filename)
-    if not os.path.isfile(src_path):
-        src_path = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), folder, filename
-        )
-
+def _read_file(src_path):
     file_contents = ""
     if os.path.isfile(src_path):
         with open(src_path) as src_file:
@@ -62,56 +42,73 @@ def _read_file(filename, folder):
     return file_contents
 
 
-def get_inline_js(filename, folder):
-    return _read_file(filename, folder).replace("</script", r"\u003c/script")
-
-
-def get_inline_css(filename, folder):
-    return _read_file(filename, folder).replace("</style", r"\00003c/style")
-
-
-def make_available(filename, src_folder, dst_folder, asset_folders):
+def find_src_file(filename, src_folder, dst_folder=None, asset_folders=None):
     filename = filename.strip()
-    if dst_folder.endswith("/"):
-        dst_folder = dst_folder[:-1]
 
     file_path_elements = [
         element
         for element in filename.rstrip("/").split("/")
         if len(element) > 0 and element[0] != "."
     ]
-    dst_folder = os.sep.join([dst_folder] + file_path_elements[:-1])
-    dst_file = os.path.join(dst_folder, file_path_elements[-1])
 
-    if not os.path.isfile(dst_file):
+    if dst_folder is None:
+        dst_file = None
+    else:
+        dst_folder = os.sep.join([dst_folder] + file_path_elements[:-1])
+        dst_file = os.path.join(dst_folder, file_path_elements[-1])
 
+        if not os.path.isfile(dst_file):
+
+            if not os.path.exists(dst_folder):
+                try:
+                    os.makedirs(dst_folder)
+                except OSError as e:  # Guard against race condition
+                    if e.errno != errno.EEXIST:
+                        raise
+
+    src_file = os.path.join(src_folder, *file_path_elements)
+    src_exists = False
+    if os.path.isfile(src_file):
+        src_exists = True
+    elif asset_folders:
+        for folder in reversed(asset_folders):
+            folder_path_elements = [
+                element
+                for element in folder.rstrip("/").split("/")
+                if len(element) > 0 and element[0] != "."
+            ]
+            if folder[0] == "/":
+                folder_path_elements[0] = "/" + folder_path_elements[0]
+            src_file = os.path.join(*folder_path_elements, *file_path_elements)
+            if os.path.isfile(src_file):
+                src_exists = True
+                break
+    if src_exists:
+        return src_file, dst_file
+    else:
+        return None, dst_file
+
+
+def get_inline_js(filename, src_folder, dst_folder=None, asset_folders=None):
+    src_file, _ = find_src_file(filename, src_folder, dst_folder, asset_folders)
+    return _read_file(src_file).replace("</script", r"\u003c/script")
+
+
+def get_inline_css(filename, src_folder, dst_folder=None, asset_folders=None):
+    src_file, _ = find_src_file(filename, src_folder, dst_folder, asset_folders)
+    return _read_file(src_file).replace("</style", r"\00003c/style")
+
+
+def make_available(filename, src_folder, dst_folder, asset_folders):
+    src_file, dst_file = find_src_file(filename, src_folder, dst_folder, asset_folders)
+    if src_file and not os.path.exists(dst_file):
         if not os.path.exists(dst_folder):
             try:
                 os.makedirs(dst_folder)
             except OSError as e:  # Guard against race condition
                 if e.errno != errno.EEXIST:
                     raise
-
-        src_file = os.path.join(src_folder, *file_path_elements)
-        src_exists = False
-        if os.path.isfile(src_file):
-            src_exists = True
-        elif asset_folders:
-            for folder in reversed(asset_folders):
-                folder_path_elements = [
-                    element
-                    for element in folder.rstrip("/").split("/")
-                    if len(element) > 0 and element[0] != "."
-                ]
-                if folder[0] == "/":
-                    folder_path_elements[0] = "/" + folder_path_elements[0]
-                src_file = os.path.join(*folder_path_elements, *file_path_elements)
-                if os.path.isfile(src_file):
-                    src_exists = True
-                    break
-
-        if src_exists:
-            shutil.copyfile(src_file, dst_file)
+        shutil.copyfile(src_file, dst_file)
 
 
 def can_make_inline_uri(src_file):

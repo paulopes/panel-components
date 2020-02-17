@@ -12,7 +12,6 @@ from .utils import (
     is_a_number,
     template_escape,
     get_dir_name,
-    clean_path,
     get_inline_js,
     get_inline_css,
     make_available,
@@ -378,31 +377,37 @@ class Component:
         template = ""
         append_head_no_nb_js = self.get_append_head_no_nb_js()
         for item_name in append_head_no_nb_js:
+            item = append_head_no_nb_js[item_name]
             if self.main:
                 make_available(
-                    append_head_no_nb_js[item_name],
+                    item,
                     src_folder=self._src_folder,
                     dst_folder=self._dst_folder,
                     asset_folders=asset_folders
                 )
                 template += """
 <script src="/{}/{}/{}" type="text/javascript" crossorigin="anonymous"></script>""".format(
-                    self.main, self._dst_folder, append_head_no_nb_js[item_name]
+                    self.main, self._dst_folder, item
                 )
             else:
                 template += (
                     """
 <script type="text/javascript">
 """
-                    + get_inline_js(append_head_no_nb_js[item_name], self._src_folder)
+                    + get_inline_js(
+                        item,
+                        src_folder=self._src_folder,
+                        asset_folders=asset_folders,
+                    )
                     + "</script>"
                 )
 
         append_head_no_nb_css = self.get_append_head_no_nb_css()
         for item_name in append_head_no_nb_css:
+            item = append_head_no_nb_css[item_name]
             if self.main:
                 make_available(
-                    append_head_no_nb_css[item_name],
+                    item,
                     src_folder=self._src_folder,
                     dst_folder=self._dst_folder,
                     asset_folders=asset_folders
@@ -410,14 +415,18 @@ class Component:
             if self.main and not IS_A_JUPYTER_NOTEBOOK:
                 template += """
 <link href="/{}/{}/{}" rel="stylesheet" crossorigin="anonymous">""".format(
-                    self.main, self._dst_folder, append_head_no_nb_css[item_name]
+                    self.main, self._dst_folder, item
                 )
             else:
                 template += (
                     """
 <style>
 """
-                    + get_inline_css(append_head_no_nb_css[item_name], self._src_folder)
+                    + get_inline_css(
+                        item,
+                        src_folder=self._src_folder,
+                        asset_folders=asset_folders,
+                    )
                     + "</style>"
                 )
         return template
@@ -433,9 +442,10 @@ class Component:
         template = ""
         prepend_body_css = self.get_prepend_body_css()
         for item_name in prepend_body_css:
+            item = prepend_body_css[item_name]
             if self.main:
                 make_available(
-                    prepend_body_css[item_name],
+                    item,
                     src_folder=self._src_folder,
                     dst_folder=self._dst_folder,
                     asset_folders=asset_folders
@@ -443,14 +453,18 @@ class Component:
             if self.main and not IS_A_JUPYTER_NOTEBOOK:
                 template += """
 <link href="/{}/{}/{}" rel="stylesheet" crossorigin="anonymous">""".format(
-                    self.main, self._dst_folder, prepend_body_css[item_name]
+                    self.main, self._dst_folder, item
                 )
             else:
                 template += (
                     """
 <style>
 """
-                    + get_inline_css(prepend_body_css[item_name], self._src_folder)
+                    + get_inline_css(
+                        item,
+                        src_folder=self._src_folder,
+                        asset_folders=asset_folders,
+                    )
                     + "</style>"
                 )
 
@@ -469,33 +483,43 @@ class Component:
         template = ""
         append_body_no_nb_js = self.get_append_body_no_nb_js()
         for item_name in append_body_no_nb_js:
+            item = append_body_no_nb_js[item_name]
             if self.main:
                 make_available(
-                    append_body_no_nb_js[item_name],
+                    item,
                     src_folder=self._src_folder,
                     dst_folder=self._dst_folder,
                     asset_folders=asset_folders
                 )
                 template += """
 <script src="/{}/{}/{}" type="text/javascript" crossorigin="anonymous"></script>""".format(
-                    self.main, self._dst_folder, append_body_no_nb_js[item_name]
+                    self.main, self._dst_folder, item
                 )
             else:
                 template += (
                     """
 <script type="text/javascript">
 """
-                    + get_inline_js(append_body_no_nb_js[item_name], self._src_folder)
+                    + get_inline_js(
+                        item,
+                        src_folder=self._src_folder,
+                        asset_folders=asset_folders,
+                    )
                     + "</script>"
                 )
 
         append_body_no_nb_script = self.get_append_body_no_nb_script()
         for item_name in append_body_no_nb_script:
+            item = append_body_no_nb_script[item_name]
             template += (
                 """
 <script type="text/javascript">
 """
-                + get_inline_js(append_body_no_nb_script[item_name], self._src_folder)
+                + get_inline_js(
+                    item,
+                    src_folder=self._src_folder,
+                    asset_folders=asset_folders,
+                )
                 + "</script>"
             )
         return template
@@ -504,9 +528,10 @@ class Component:
         template = ""
         append_body_js = self.get_append_body_js()
         for item_name in append_body_js:
+            item = append_body_js[item_name]
             if self.main:
                 make_available(
-                    append_body_js[item_name],
+                    item,
                     src_folder=self._src_folder,
                     dst_folder=self._dst_folder,
                     asset_folders=asset_folders
@@ -514,14 +539,18 @@ class Component:
             if self.main and not IS_A_JUPYTER_NOTEBOOK:
                 template += """
 <script src="/{}/{}/{}" type="text/javascript" crossorigin="anonymous"></script>""".format(
-                    self.main, self._dst_folder, append_body_js[item_name]
+                    self.main, self._dst_folder, item
                 )
             else:
                 template += (
                     """
 <script type="text/javascript">
 """
-                    + get_inline_js(append_body_js[item_name], self._src_folder)
+                    + get_inline_js(
+                        item,
+                        src_folder=self._src_folder,
+                        asset_folders=asset_folders,
+                    )
                     + "</script>"
                 )
 
@@ -610,12 +639,13 @@ class Component:
     def app(self):
         asset_folders = self.get_asset_folders()
         for filename in self.get_files_uris():
-            make_available(
-                filename,
-                src_folder=self._src_folder,
-                dst_folder=self._dst_folder,
-                asset_folders=asset_folders
-            )
+            if self.main:
+                make_available(
+                    filename,
+                    src_folder=self._src_folder,
+                    dst_folder=self._dst_folder,
+                    asset_folders=asset_folders
+                )
         self._no_panel_spacer = ""
         panels = self.get_panels()
         if not panels:
