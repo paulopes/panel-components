@@ -124,31 +124,32 @@ class Component:
         
         for attr in self.attributes:
             attr_value = self.attributes[attr]
-            attr = attr.replace("_", "-")
-            if attr_value:
-                if isinstance(attr_value, str):
-                    if attr in ["href", "src"]:                        
-                        attr_value = attr_value.strip()
-                        attr_schema = attr_value.lower()[:6]
-                        if not (
-                            attr_schema in ["https:", "http:/"]
-                            or attr_schema.startswith("//")
-                        ):
-                            attr_url = urlsplit(attr_value).geturl()
-                            if attr_url:
-                                self._files_attrs[attr] = attr_url
-                                if can_make_inline_uri(attr_url):
-                                    self._files_uris.add(attr_value)
-                    else:
-                        attr_value = html.escape(attr_value)
-                elif isinstance(attr_value, bool):
-                    attr_value = "" if attr_value else None
-                elif is_a_number(attr_value):
-                    attr_value = str(attr_value)
+            if attr_value is True:
+                attr_value = "true"
+            elif attr_value is False:
+                attr_value = "false"
+            elif isinstance(attr_value, str):
+                if attr in ["href", "src"]:                        
+                    attr_value = attr_value.strip()
+                    attr_schema = attr_value.lower()[:6]
+                    if not (
+                        attr_schema in ["https:", "http:/"]
+                        or attr_schema.startswith("//")
+                    ):
+                        attr_url = urlsplit(attr_value).geturl()
+                        if attr_url:
+                            self._files_attrs[attr] = attr_url
+                            if can_make_inline_uri(attr_url):
+                                self._files_uris.add(attr_value)
                 else:
-                    attr_value = None
-                if attr_value is not None:
-                    self.attributes[attr] = attr_value
+                    attr_value = html.escape(attr_value)
+            elif is_a_number(attr_value):
+                attr_value = str(attr_value)
+            else:
+                attr_value = None
+            if attr_value is not None:
+                attr = attr.replace("_", "-")
+                self.attributes[attr] = attr_value
 
         return self
 
