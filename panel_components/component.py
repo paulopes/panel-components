@@ -394,7 +394,7 @@ class Component:
                     """
 <script type="text/javascript">
 """
-                    + get_inline_js(append_head_no_nb_js[item_name], self._dst_folder)
+                    + get_inline_js(append_head_no_nb_js[item_name], self._src_folder)
                     + "</script>"
                 )
 
@@ -417,7 +417,7 @@ class Component:
                     """
 <style>
 """
-                    + get_inline_css(append_head_no_nb_css[item_name], self._dst_folder)
+                    + get_inline_css(append_head_no_nb_css[item_name], self._src_folder)
                     + "</style>"
                 )
         return template
@@ -450,7 +450,7 @@ class Component:
                     """
 <style>
 """
-                    + get_inline_css(prepend_body_css[item_name], self._dst_folder)
+                    + get_inline_css(prepend_body_css[item_name], self._src_folder)
                     + "</style>"
                 )
 
@@ -485,7 +485,7 @@ class Component:
                     """
 <script type="text/javascript">
 """
-                    + get_inline_js(append_body_no_nb_js[item_name], self._dst_folder)
+                    + get_inline_js(append_body_no_nb_js[item_name], self._src_folder)
                     + "</script>"
                 )
 
@@ -495,7 +495,7 @@ class Component:
                 """
 <script type="text/javascript">
 """
-                + get_inline_js(append_body_no_nb_script[item_name], self._dst_folder)
+                + get_inline_js(append_body_no_nb_script[item_name], self._src_folder)
                 + "</script>"
             )
         return template
@@ -521,7 +521,7 @@ class Component:
                     """
 <script type="text/javascript">
 """
-                    + get_inline_js(append_body_js[item_name], self._dst_folder)
+                    + get_inline_js(append_body_js[item_name], self._src_folder)
                     + "</script>"
                 )
 

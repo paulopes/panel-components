@@ -7,7 +7,7 @@ from .component import Component
 from .tags import div, script
 
 
-def vue_app(*children, template="", data={}, **attributes):
+def vue_app(*children, template="", data={}, main=None, **attributes):
 
     # Vue.js app
     app_tag = div(auto_id=True)
@@ -41,4 +41,4 @@ var app = new Vue({
         os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
     )
     app_tag.append_body_js(vue="vue/vue.min.js")
-    return Component(app_tag, template_tag)
+    return Component(app_tag, template_tag, main=main)
