@@ -124,6 +124,10 @@ class Component:
         
         for attr in self.attributes:
             attr_value = self.attributes[attr]
+            if attr_value is True:
+                attr_value = "true"
+            elif attr_value is False:
+                attr_value = "false"
             attr = attr.replace("_", "-")
             if attr_value:
                 if isinstance(attr_value, str):
