@@ -7,10 +7,10 @@ from .component import Component
 from .tags import div, script
 
 
-def vue_app(*children, template="", data={}, main=None, **attributes):
+def vue(*children, template="", main=None, **attributes):
 
     # Vue.js app
-    app_tag = div(auto_id=True)
+    app_tag = div()
 
     # Vue.js template
     # We use an x-template script tag instead of a template tag because:
@@ -22,23 +22,22 @@ def vue_app(*children, template="", data={}, main=None, **attributes):
     template_tag = script(
         div(*children, **attributes).prepend_html(template),
         type="text/x-template",
-        auto_id=True,
     )
 
-    # Vue.js script
-    app_tag.append_body_script(**{
-        app_tag.id: '''
+    component = Component(app_tag, template_tag, main=main)
+
+    component.data_prefix = '''
 var app = new Vue({
   el: "#''' + app_tag.id + '''",
   template: "#''' + template_tag.id + '''",
-  data: function() {
-    return ''' + json.dumps(data) + '''
+  data: {'''
+    component.data_postfix = '''
   }
-});'''})
-
-    # Vue.js library
-    app_tag.asset_folders(
+});'''
+    
+    component.asset_folders(
         os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
     )
-    app_tag.append_body_js(vue="vue/vue.min.js")
-    return Component(app_tag, template_tag, main=main)
+    component.append_body_js(vue="vue/vue.min.js")
+
+    return component

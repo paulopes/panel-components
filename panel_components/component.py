@@ -3,6 +3,7 @@ from __future__ import print_function, division
 
 import html
 import uuid
+import json
 import itertools
 
 import panel as pn
@@ -34,13 +35,12 @@ class Component:
         *children,
         tag_name=None,
         xml_closing_style=False,
-        auto_id=False,
         title=None,
         main=None,
         css_classes=None,
         **attributes
     ):
-        self._tag_name = tag_name
+        self.tag_name = tag_name
         self._xml_closing_style = xml_closing_style
 
         if title:
@@ -53,6 +53,8 @@ class Component:
         else:
             self.main = ""
 
+        self._id = ""
+        
         self._src_folder = "assets"
         self._dst_folder = "static"
 
@@ -68,6 +70,10 @@ class Component:
 
         self._prepend_body_css = dict()
         self._prepend_body_style = dict()
+
+        self._component_data = dict()
+        self.data_prefix = ""
+        self.data_postfix = ""
 
         self._panel_css_files = dict()
         self._panel_raw_css = dict()
@@ -96,17 +102,23 @@ class Component:
         if attributes:
             self.add_attributes(**attributes)
 
-        if auto_id:
-            self.id = "id" + str(uuid.uuid4().hex)
-            self.attributes["id"] = self.id
-        else:
-            self.id = ""
-
         if main is True:  # Instead of just truthy
             main = get_dir_name()  # Use current directory's name
             
         if children:
             self.add_children(*children)
+
+    @property
+    def id(self):
+        if not self._id:
+            # Auto-generate an unique id for the component
+            self.id = "id" + str(uuid.uuid4().hex)
+        return self._id
+
+    @id.setter
+    def id(self, value):
+        self._id = value
+        self.attributes["id"] = self._id
 
     def add_classes(self, *css_classes):
         css_classes_set = set(css_classes)
@@ -150,6 +162,9 @@ class Component:
             if attr_value is not None:
                 attr = attr.replace("_", "-")
                 self.attributes[attr] = attr_value
+
+        if "id" in self.attributes:
+            self.id = attributes["id"]
 
         return self
 
@@ -199,6 +214,50 @@ class Component:
         for child in self.children:
             prepend_body_style = dict(child.get_prepend_body_style(), **prepend_body_style)
         return prepend_body_style
+
+    def component_data(self, prefix=None, data=None, postfix=None):
+        if self.id not in self._component_data:
+            self._component_data[self.id] = {
+                "prefix": prefix,
+                "data": data,
+                "postfix": postfix,
+            }
+        else:
+            if prefix is not None:
+                self._component_data[self.id]["refix"] = prefix
+            if data is not None:
+                self._component_data[self.id]["data"] = data
+            if postfix is not None:
+                self._component_data[self.id]["postfix"] = postfix
+        return self
+
+    def data(self, data):
+        self.component_data(data=data)
+        return self
+
+    def get_component_data(self):
+        component_data = self._component_data.copy()
+        for child in self.children:
+            component_data = dict(child.get_component_data(), **component_data)
+        return component_data        
+
+    def get_data_prefix(self):
+        data_prefix = self.data_prefix
+        if not data_prefix:
+            for child in self.children:
+                data_prefix = child.get_data_prefix()
+                if data_prefix:
+                    break
+        return data_prefix
+
+    def get_data_postfix(self):
+        data_postfix = self.data_postfix
+        if not data_postfix:
+            for child in self.children:
+                data_postfix = child.get_data_postfix()
+                if data_postfix:
+                    break
+        return data_postfix
 
     def panel_css_files(self, **files):
         self._panel_css_files.update(files)
@@ -564,6 +623,42 @@ class Component:
                 + append_body_script[item_name].replace("</script", r"\u003c/script")
                 + "</script>"
             )
+
+        data_prefix = self.get_data_prefix()
+        if not data_prefix:
+            data_prefix = """
+window.data = {
+    """
+        data_postfix = self.get_data_postfix()
+        if not data_postfix:
+            data_postfix = """
+}"""
+        
+        data = self.get_component_data()
+        data_elements = list()
+
+        for component_id in data:
+            item = data[component_id]
+            item_elements = [
+                item["prefix"],
+                "data: " + json.dumps(item["data"]),
+                item["postfix"],
+            ]
+            data_elements.append(component_id + ''': {
+                ''' + ''',
+                '''.join(filter(None, item_elements)) + '''
+    }''')
+
+        data_script = (data_prefix + ''',
+            '''.join(data_elements) + data_postfix).replace(
+                "</script", r"\u003c/script")
+
+        if data_script:
+            template += """
+<script type="text/javascript">
+""" + data_script + """
+</script>"""
+
         return template
 
     def _get_template(self, asset_folders):
@@ -674,7 +769,7 @@ class Component:
         return tmpl
 
     def get_html(self, main, asset_folders):
-        tag_name = self._tag_name
+        tag_name = self.tag_name
         markup = ""
         if (
             not self._xml_closing_style
