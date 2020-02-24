@@ -26,10 +26,95 @@ except:
     from urlparse import urlsplit
 
 
+# Not relying on panel to include pyviz resources, except while running
+# inside Jupyter, because sometimes when panel is serving multiple notebooks
+# simultaneously panel will include in a notebook page resources that are
+# only needed in pages of other notebooks.
+PYVIZ_EXTENSIONS = {
+    "panel": {
+        "css": {
+            "local": ["panel/panel.css",],
+        },
+        "js": {
+            "local": ["panel/panel.min.js",],
+        },
+    },
+    "bokeh": {
+        "js": {
+            "cdn": [
+                "https://cdnjs.cloudflare.com/ajax/libs/bokeh/1.4.0/bokeh.min.js",
+                "https://cdnjs.cloudflare.com/ajax/libs/bokeh/1.4.0/bokeh-widgets.min.js",
+                "https://cdnjs.cloudflare.com/ajax/libs/bokeh/1.4.0/bokeh-tables.min.js",
+                "https://cdnjs.cloudflare.com/ajax/libs/bokeh/1.4.0/bokeh-gl.js",
+            ],
+            "local": [
+                "bokeh/bokeh.min.js",
+                "bokeh/bokeh-widgets.min.js",
+                "bokeh/bokeh-tables.min.js",
+                "bokeh/bokeh-gl.min.js",
+            ],
+        },
+    },
+    "katex": {
+        "css": {
+            "cdn": [
+                "https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.6.0/katex.min.css",
+            ],
+            "local": ["katex/katex.css",],
+        },
+        "js": {
+            "cdn": [
+                "https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.6.0/katex.min.js",
+                "https://cdn.jsdelivr.net/npm/katex@0.10.1/dist/contrib/auto-render.min.js",
+            ],
+            "local": ["katex/katex.min.js", "katex/auto-render.min.js",],
+        },
+    },
+    "mathjax": {
+        "js": {
+            "cdn": [
+                "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-MML-AM_CHTML",
+            ],
+            "local": ["mathjax/mathjax_tex-mml-am_chtml.js",],
+        },
+    },
+    "plotly": {
+        "js": {
+            "cdn": [
+                "https://cdn.plot.ly/plotly-latest.min.js",
+                "https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.15/lodash.min.js",
+            ],
+            "local": ["plotly/plotly.min.js", "plotly/lodash.min.js",],
+        },
+    },
+    "vega": {
+        "js": {
+            "cdn": [
+                "https://cdn.jsdelivr.net/npm/vega@5",
+                "https://cdn.jsdelivr.net/npm/vega-lite@3",
+                "https://cdn.jsdelivr.net/npm/vega-embed@6",
+            ],
+            "local": ["vega/vega.js", "vega/vega-lite.js", "vega/vega-embed.js",],
+        },
+    },
+    "vtk": {"js": {"cdn": ["https://unpkg.com/vtk.js",], "local": ["vtk/vtk.js",],},},
+    "ace": {
+        "js": {
+            "cdn": [
+                "https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.3/ace.js",
+                "https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.3/ext-language_tools.js",
+            ],
+            "local": ["vtk/vtk.js",],
+        },
+    },
+}
+
+
 class Component:
     """Encapsulates all the html content, css and js requirements, as well as
     methods that assist in creating and generating a template (or html partial)
     for a component of a page that will served by a Panel server."""
+
     def __init__(
         self,
         *children,
@@ -54,7 +139,7 @@ class Component:
             self.main = ""
 
         self._id = ""
-        
+
         self._src_folder = "assets"
         self._dst_folder = "static"
 
@@ -66,6 +151,8 @@ class Component:
         self._append_head_no_nb_css = dict()
         self._append_head_no_nb_js = dict()
 
+        self._pyviz_extensions = set()
+        
         self._body_classes = set()
 
         self._prepend_body_css = dict()
@@ -104,7 +191,7 @@ class Component:
 
         if main is True:  # Instead of just truthy
             main = get_dir_name()  # Use current directory's name
-            
+
         if children:
             self.add_children(*children)
 
@@ -133,7 +220,7 @@ class Component:
             if "class" in attributes:
                 self.add_classes(attributes["class"])
                 del attributes["class"]
-        
+
         for attr in attributes:
             attr_value = attributes[attr]
             if attr_value is True:
@@ -141,7 +228,7 @@ class Component:
             elif attr_value is False:
                 attr_value = "false"
             elif isinstance(attr_value, str):
-                if attr in ["href", "src"]:                        
+                if attr in ["href", "src"]:
                     attr_value = attr_value.strip()
                     attr_schema = attr_value.lower()[:6]
                     if not (
@@ -175,7 +262,9 @@ class Component:
     def get_append_head_no_nb_css(self):
         append_head_no_nb_css = self._append_head_no_nb_css.copy()
         for child in self.children:
-            append_head_no_nb_css = dict(child.get_append_head_no_nb_css(), **append_head_no_nb_css)
+            append_head_no_nb_css = dict(
+                child.get_append_head_no_nb_css(), **append_head_no_nb_css
+            )
         return append_head_no_nb_css
 
     def append_head_no_nb_js(self, **files):
@@ -185,8 +274,23 @@ class Component:
     def get_append_head_no_nb_js(self):
         append_head_no_nb_js = self._append_head_no_nb_js.copy()
         for child in self.children:
-            append_head_no_nb_js = dict(child.get_append_head_no_nb_js(), **append_head_no_nb_js)
+            append_head_no_nb_js = dict(
+                child.get_append_head_no_nb_js(), **append_head_no_nb_js
+            )
         return append_head_no_nb_js
+
+    def pyviz_extensions(self, *extensions):
+        extensions_no_spaces = [item.split() for item in extensions if item]
+        self._pyviz_extensions = self._pyviz_extensions.union(
+            set(itertools.chain.from_iterable(extensions_no_spaces))
+        )
+        return self
+
+    def get_pyviz_extensions(self):
+        pyviz_extensions = self._pyviz_extensions.copy()
+        for child in self.children:
+            pyviz_extensions = pyviz_extensions.union(child.get_pyviz_extensions())
+        return pyviz_extensions
 
     def body_classes(self, *classes):
         classes_no_spaces = [item.split() for item in classes if item]
@@ -194,6 +298,12 @@ class Component:
             set(itertools.chain.from_iterable(classes_no_spaces))
         )
         return self
+
+    def get_body_classes(self):
+        body_classes = self._body_classes.copy()
+        for child in self.children:
+            body_classes = body_classes.union(child.get_body_classes())
+        return body_classes
 
     def prepend_body_css(self, **files):
         self._prepend_body_css.update(files)
@@ -212,7 +322,9 @@ class Component:
     def get_prepend_body_style(self):
         prepend_body_style = self._prepend_body_style.copy()
         for child in self.children:
-            prepend_body_style = dict(child.get_prepend_body_style(), **prepend_body_style)
+            prepend_body_style = dict(
+                child.get_prepend_body_style(), **prepend_body_style
+            )
         return prepend_body_style
 
     def component_data(self, prefix=None, data=None, postfix=None):
@@ -239,7 +351,7 @@ class Component:
         component_data = self._component_data.copy()
         for child in self.children:
             component_data = dict(child.get_component_data(), **component_data)
-        return component_data        
+        return component_data
 
     def get_data_prefix(self):
         data_prefix = self.data_prefix
@@ -296,7 +408,9 @@ class Component:
     def get_append_body_script(self):
         append_body_script = self._append_body_script.copy()
         for child in self.children:
-            append_body_script = dict(child.get_append_body_script(), **append_body_script)
+            append_body_script = dict(
+                child.get_append_body_script(), **append_body_script
+            )
         return append_body_script
 
     def append_body_no_nb_js(self, **files):
@@ -306,7 +420,9 @@ class Component:
     def get_append_body_no_nb_js(self):
         append_body_no_nb_js = self._append_body_no_nb_js.copy()
         for child in self.children:
-            append_body_no_nb_js = dict(child.get_append_body_no_nb_js(), **append_body_no_nb_js)
+            append_body_no_nb_js = dict(
+                child.get_append_body_no_nb_js(), **append_body_no_nb_js
+            )
         return append_body_no_nb_js
 
     def append_body_no_nb_script(self, **scripts):
@@ -316,7 +432,9 @@ class Component:
     def get_append_body_no_nb_script(self):
         append_body_no_nb_script = self._append_body_no_nb_script.copy()
         for child in self.children:
-            append_body_no_nb_script = dict(child.get_append_body_no_nb_script(), **append_body_no_nb_script)
+            append_body_no_nb_script = dict(
+                child.get_append_body_no_nb_script(), **append_body_no_nb_script
+            )
         return append_body_no_nb_script
 
     def files_uris(self, *files):
@@ -403,28 +521,28 @@ class Component:
                                 attr_url,
                                 self._src_folder,
                                 self._dst_folder,
-                                asset_folders=asset_folders
+                                asset_folders=asset_folders,
                             )
                             if uri_value:
                                 attr_value = uri_value
                 else:
                     if len(attr_value) is not 0 and attr is "src":
-                        attr_value = "{}/{}/{}".format(main, self._dst_folder, attr_value)
+                        attr_value = "{}/{}/{}".format(
+                            main, self._dst_folder, attr_value
+                        )
                     elif len(attr_value) is 0:
                         attributes += " {}".format(attr)
                     else:
                         attributes += ' {}="{}"'.format(attr, attr_value)
-                                   
+
             if attr_value is not None:
                 if len(attr_value) is 0:
                     attributes += " {}".format(attr)
                 else:
                     attributes += ' {}="{}"'.format(attr, attr_value)
-                            
+
         if self.css_classes:
-            attributes += ' class="{}"'.format(
-                html.escape(" ".join(self.css_classes))
-            )
+            attributes += ' class="{}"'.format(html.escape(" ".join(self.css_classes)))
         return attributes
 
     def get_panels(self):
@@ -433,18 +551,39 @@ class Component:
             panels.update(child.get_panels())
         return panels
 
+    def extension(self, *args, **params):
+        pn.extension(*args, **params)
+        for name in args:
+            if isinstance(name, str) and name in PYVIZ_EXTENSIONS:
+                self._pyviz_extensions.add(name)
+        return self
+
+    def _make_available_head_no_nb(self, asset_folders):
+        append_head_no_nb_js = self.get_append_head_no_nb_js()
+        for item_name in append_head_no_nb_js:
+            item = append_head_no_nb_js[item_name]
+            make_available(
+                item,
+                src_folder=self._src_folder,
+                dst_folder=self._dst_folder,
+                asset_folders=asset_folders,
+            )
+        append_head_no_nb_css = self.get_append_head_no_nb_css()
+        for item_name in append_head_no_nb_css:
+            item = append_head_no_nb_css[item_name]
+            make_available(
+                item,
+                src_folder=self._src_folder,
+                dst_folder=self._dst_folder,
+                asset_folders=asset_folders,
+            )
+                
     def _get_template_head_no_nb(self, asset_folders):
         template = ""
         append_head_no_nb_js = self.get_append_head_no_nb_js()
         for item_name in append_head_no_nb_js:
             item = append_head_no_nb_js[item_name]
             if self.main:
-                make_available(
-                    item,
-                    src_folder=self._src_folder,
-                    dst_folder=self._dst_folder,
-                    asset_folders=asset_folders
-                )
                 template += """
 <script src="/{}/{}/{}" type="text/javascript" crossorigin="anonymous"></script>""".format(
                     self.main, self._dst_folder, item
@@ -455,9 +594,7 @@ class Component:
 <script type="text/javascript">
 """
                     + get_inline_js(
-                        item,
-                        src_folder=self._src_folder,
-                        asset_folders=asset_folders,
+                        item, src_folder=self._src_folder, asset_folders=asset_folders,
                     )
                     + "</script>"
                 )
@@ -466,13 +603,6 @@ class Component:
         for item_name in append_head_no_nb_css:
             item = append_head_no_nb_css[item_name]
             if self.main:
-                make_available(
-                    item,
-                    src_folder=self._src_folder,
-                    dst_folder=self._dst_folder,
-                    asset_folders=asset_folders
-                )
-            if self.main and not IS_A_JUPYTER_NOTEBOOK:
                 template += """
 <link href="/{}/{}/{}" rel="stylesheet" crossorigin="anonymous">""".format(
                     self.main, self._dst_folder, item
@@ -483,18 +613,91 @@ class Component:
 <style>
 """
                     + get_inline_css(
-                        item,
-                        src_folder=self._src_folder,
-                        asset_folders=asset_folders,
+                        item, src_folder=self._src_folder, asset_folders=asset_folders,
                     )
                     + "</style>"
                 )
         return template
 
+    def _make_available_head_resources(self, asset_folders):
+        pyviz_extensions = self.get_pyviz_extensions().union({ "panel", "bokeh" })
+        
+        for extension_name in pyviz_extensions:
+            extension = PYVIZ_EXTENSIONS[extension_name]
+            
+            if "css" in extension:
+                # TODO add support for CDN resources
+                if "local" in extension["css"]:
+                    for item in extension["css"]["local"]:
+                        make_available(
+                            item,
+                            src_folder=self._src_folder,
+                            dst_folder=self._dst_folder,
+                            asset_folders=asset_folders,
+                        )
+            if "js" in extension:
+                # TODO add support for CDN resources
+                if "local" in extension["js"]:
+                    for item in extension["js"]["local"]:
+                        make_available(
+                            item,
+                            src_folder=self._src_folder,
+                            dst_folder=self._dst_folder,
+                            asset_folders=asset_folders,
+                        )
+
+    def _get_template_pyviz_resources(self, asset_folders):
+        template = ""
+        pyviz_extensions = self.get_pyviz_extensions().union({ "panel", "bokeh" })
+        
+        for extension_name in pyviz_extensions:
+            extension = PYVIZ_EXTENSIONS[extension_name]
+            
+            if "css" in extension:
+                # TODO add support for CDN resources
+                if "local" in extension["css"]:
+                    for item in extension["css"]["local"]:
+                        if self.main:
+                            template += """
+<link href="/{}/{}/{}" rel="stylesheet" crossorigin="anonymous">""".format(
+                                self.main, self._dst_folder, item
+                            )
+                        else:
+                            template += (
+                                """
+<style>
+"""
+                                + get_inline_css(
+                                    item, src_folder=self._src_folder, asset_folders=asset_folders,
+                                )
+                                + "</style>"
+                            )
+                            
+            if "js" in extension:
+                # TODO add support for CDN resources
+                if "local" in extension["js"]:
+                    for item in extension["js"]["local"]:                        
+                        if self.main:
+                            template += """
+<script src="/{}/{}/{}" type="text/javascript" crossorigin="anonymous"></script>""".format(
+                                self.main, self._dst_folder, item
+                            )
+                        else:
+                            template += (
+                    """
+<script type="text/javascript">
+"""
+                                + get_inline_js(
+                                    item, src_folder=self._src_folder, asset_folders=asset_folders,
+                                )
+                                + "</script>"
+                            )
+        return template
+
     def _get_template_body_classes_attr(self):
-        # classes = self.get_body_classes()
-        if self._body_classes:
-            return ' class="' + " ".join(self._body_classes) + '"'
+        classes = self.get_body_classes()
+        if classes:
+            return ' class="' + " ".join(classes) + '"'
         else:
             return ""
 
@@ -508,7 +711,7 @@ class Component:
                     item,
                     src_folder=self._src_folder,
                     dst_folder=self._dst_folder,
-                    asset_folders=asset_folders
+                    asset_folders=asset_folders,
                 )
             if self.main and not IS_A_JUPYTER_NOTEBOOK:
                 template += """
@@ -521,9 +724,7 @@ class Component:
 <style>
 """
                     + get_inline_css(
-                        item,
-                        src_folder=self._src_folder,
-                        asset_folders=asset_folders,
+                        item, src_folder=self._src_folder, asset_folders=asset_folders,
                     )
                     + "</style>"
                 )
@@ -539,18 +740,23 @@ class Component:
             )
         return template
 
+    def _make_available_contents_bottom_no_nb(self, asset_folders):
+        append_body_no_nb_js = self.get_append_body_no_nb_js()
+        for item_name in append_body_no_nb_js:
+            item = append_body_no_nb_js[item_name]
+            make_available(
+                item,
+                src_folder=self._src_folder,
+                dst_folder=self._dst_folder,
+                asset_folders=asset_folders,
+            )
+                
     def _get_template_contents_bottom_no_nb(self, asset_folders):
         template = ""
         append_body_no_nb_js = self.get_append_body_no_nb_js()
         for item_name in append_body_no_nb_js:
             item = append_body_no_nb_js[item_name]
             if self.main:
-                make_available(
-                    item,
-                    src_folder=self._src_folder,
-                    dst_folder=self._dst_folder,
-                    asset_folders=asset_folders
-                )
                 template += """
 <script src="/{}/{}/{}" type="text/javascript" crossorigin="anonymous"></script>""".format(
                     self.main, self._dst_folder, item
@@ -561,9 +767,7 @@ class Component:
 <script type="text/javascript">
 """
                     + get_inline_js(
-                        item,
-                        src_folder=self._src_folder,
-                        asset_folders=asset_folders,
+                        item, src_folder=self._src_folder, asset_folders=asset_folders,
                     )
                     + "</script>"
                 )
@@ -576,9 +780,7 @@ class Component:
 <script type="text/javascript">
 """
                 + get_inline_js(
-                    item,
-                    src_folder=self._src_folder,
-                    asset_folders=asset_folders,
+                    item, src_folder=self._src_folder, asset_folders=asset_folders,
                 )
                 + "</script>"
             )
@@ -594,7 +796,7 @@ class Component:
                     item,
                     src_folder=self._src_folder,
                     dst_folder=self._dst_folder,
-                    asset_folders=asset_folders
+                    asset_folders=asset_folders,
                 )
             if self.main and not IS_A_JUPYTER_NOTEBOOK:
                 template += """
@@ -607,9 +809,7 @@ class Component:
 <script type="text/javascript">
 """
                     + get_inline_js(
-                        item,
-                        src_folder=self._src_folder,
-                        asset_folders=asset_folders,
+                        item, src_folder=self._src_folder, asset_folders=asset_folders,
                     )
                     + "</script>"
                 )
@@ -633,7 +833,7 @@ window.data = {
         if not data_postfix:
             data_postfix = """
 }"""
-        
+
         data = self.get_component_data()
         data_elements = list()
 
@@ -644,24 +844,44 @@ window.data = {
                 "data: " + json.dumps(item["data"]),
                 item["postfix"],
             ]
-            data_elements.append(component_id + ''': {
-                ''' + ''',
-                '''.join(filter(None, item_elements)) + '''
-    }''')
+            data_elements.append(
+                component_id
+                + """: {
+                """
+                + """,
+                """.join(
+                    filter(None, item_elements)
+                )
+                + """
+    }"""
+            )
 
-        data_script = (data_prefix + ''',
-            '''.join(data_elements) + data_postfix).replace(
-                "</script", r"\u003c/script")
+        data_script = (
+            data_prefix
+            + """,
+            """.join(
+                data_elements
+            )
+            + data_postfix
+        ).replace("</script", r"\u003c/script")
 
         if data_script:
-            template += """
+            template += (
+                """
 <script type="text/javascript">
-""" + data_script + """
+"""
+                + data_script
+                + """
 </script>"""
+            )
 
         return template
 
     def _get_template(self, asset_folders):
+        if self.main:
+            self._make_available_head_resources(asset_folders)
+            self._make_available_head_no_nb(asset_folders)
+            self._make_available_contents_bottom_no_nb(asset_folders)
         return (
             """\
 {% extends base %}
@@ -675,12 +895,9 @@ window.data = {
     <meta name="viewport" content="width=device-width, initial-scale=1">
     {% block preamble %}{% endblock %}
     {% block resources %}
-        {% block css_resources %}
-        {{ bokeh_css | indent(8) if bokeh_css }}
-        {% endblock %}
-        {% block js_resources %}
-        {{ bokeh_js | indent(8) if bokeh_js }}
-        {% endblock %}
+"""
+            + template_escape(self._get_template_pyviz_resources(asset_folders))
+            + """
     {% endblock %}
     {% block postamble %}
 """
@@ -740,7 +957,7 @@ window.data = {
                     filename,
                     src_folder=self._src_folder,
                     dst_folder=self._dst_folder,
-                    asset_folders=asset_folders
+                    asset_folders=asset_folders,
                 )
         self._no_panel_spacer = ""
         panels = self.get_panels()
