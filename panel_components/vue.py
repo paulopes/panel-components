@@ -30,7 +30,8 @@ def vue(*children, template="", main=None, **attributes):
 var app = new Vue({
   el: "#''' + app_tag.id + '''",
   template: "#''' + template_tag.id + '''",
-  data: {'''
+  data: {
+    '''
     component.data_postfix = '''
   }
 });'''

@@ -31,41 +31,39 @@ except:
 # simultaneously panel will include in a notebook page resources that are
 # only needed in pages of other notebooks.
 PYVIZ_EXTENSIONS = {
-    "panel": {
-        "css": {
-            "local": ["panel/panel.css",],
-        },
-        "js": {
-            "local": ["panel/panel.min.js",],
-        },
-    },
     "bokeh": {
+        "css": {
+            "cdn": ["bokeh/panel.css",],  # Not on a CDN
+            "local": ["bokeh/panel.css",],
+        },
         "js": {
             "cdn": [
-                "https://cdnjs.cloudflare.com/ajax/libs/bokeh/1.4.0/bokeh.min.js",
-                "https://cdnjs.cloudflare.com/ajax/libs/bokeh/1.4.0/bokeh-widgets.min.js",
-                "https://cdnjs.cloudflare.com/ajax/libs/bokeh/1.4.0/bokeh-tables.min.js",
-                "https://cdnjs.cloudflare.com/ajax/libs/bokeh/1.4.0/bokeh-gl.js",
+                "//cdnjs.cloudflare.com/ajax/libs/bokeh/1.4.0/bokeh.min.js",
+                "//cdnjs.cloudflare.com/ajax/libs/bokeh/1.4.0/bokeh-widgets.min.js",
+                "//cdnjs.cloudflare.com/ajax/libs/bokeh/1.4.0/bokeh-tables.min.js",
+                "//cdnjs.cloudflare.com/ajax/libs/bokeh/1.4.0/bokeh-gl.js",
+                "bokeh/panel.min.js",  # Not on a CDN
             ],
             "local": [
                 "bokeh/bokeh.min.js",
                 "bokeh/bokeh-widgets.min.js",
                 "bokeh/bokeh-tables.min.js",
                 "bokeh/bokeh-gl.min.js",
+                "bokeh/panel.min.js",
             ],
         },
     },
     "katex": {
         "css": {
             "cdn": [
-                "https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.6.0/katex.min.css",
+                "//cdnjs.cloudflare.com/ajax/libs/KaTeX/0.6.0/katex.min.css",
             ],
             "local": ["katex/katex.css",],
         },
         "js": {
             "cdn": [
-                "https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.6.0/katex.min.js",
-                "https://cdn.jsdelivr.net/npm/katex@0.10.1/dist/contrib/auto-render.min.js",
+                "//cdnjs.cloudflare.com/ajax/libs/KaTeX/0.6.0/katex.min.js",
+                "//cdn.jsdelivr.net/npm/katex@0.10.1/dist/contrib/auto-render.min.js",
             ],
             "local": ["katex/katex.min.js", "katex/auto-render.min.js",],
         },
@@ -73,7 +71,7 @@ PYVIZ_EXTENSIONS = {
     "mathjax": {
         "js": {
             "cdn": [
-                "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-MML-AM_CHTML",
+                "//cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-MML-AM_CHTML",
             ],
             "local": ["mathjax/mathjax_tex-mml-am_chtml.js",],
         },
@@ -81,8 +79,8 @@ PYVIZ_EXTENSIONS = {
     "plotly": {
         "js": {
             "cdn": [
-                "https://cdn.plot.ly/plotly-latest.min.js",
-                "https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.15/lodash.min.js",
+                "//cdn.plot.ly/plotly-latest.min.js",
+                "//cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.15/lodash.min.js",
             ],
             "local": ["plotly/plotly.min.js", "plotly/lodash.min.js",],
         },
@@ -90,19 +88,19 @@ PYVIZ_EXTENSIONS = {
     "vega": {
         "js": {
             "cdn": [
-                "https://cdn.jsdelivr.net/npm/vega@5",
-                "https://cdn.jsdelivr.net/npm/vega-lite@3",
-                "https://cdn.jsdelivr.net/npm/vega-embed@6",
+                "//cdn.jsdelivr.net/npm/vega@5",
+                "//cdn.jsdelivr.net/npm/vega-lite@3",
+                "//cdn.jsdelivr.net/npm/vega-embed@6",
             ],
             "local": ["vega/vega.js", "vega/vega-lite.js", "vega/vega-embed.js",],
         },
     },
-    "vtk": {"js": {"cdn": ["https://unpkg.com/vtk.js",], "local": ["vtk/vtk.js",],},},
+    "vtk": {"js": {"cdn": ["//unpkg.com/vtk.js",], "local": ["vtk/vtk.js",],},},
     "ace": {
         "js": {
             "cdn": [
-                "https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.3/ace.js",
-                "https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.3/ext-language_tools.js",
+                "//cdnjs.cloudflare.com/ajax/libs/ace/1.4.3/ace.js",
+                "//cdnjs.cloudflare.com/ajax/libs/ace/1.4.3/ext-language_tools.js",
             ],
             "local": ["vtk/vtk.js",],
         },
@@ -134,7 +132,10 @@ class Component:
             self.title = ""
 
         if main:
-            self.main = main
+            if main is True:  # Instead of just truthy
+                self.main = get_dir_name()  # Use current directory's name
+            else:
+                self.main = str(main)
         else:
             self.main = ""
 
@@ -188,9 +189,6 @@ class Component:
 
         if attributes:
             self.add_attributes(**attributes)
-
-        if main is True:  # Instead of just truthy
-            main = get_dir_name()  # Use current directory's name
 
         if children:
             self.add_children(*children)
@@ -620,7 +618,7 @@ class Component:
         return template
 
     def _make_available_head_resources(self, asset_folders):
-        pyviz_extensions = self.get_pyviz_extensions().union({ "panel", "bokeh" })
+        pyviz_extensions = self.get_pyviz_extensions().union({ "bokeh" })
         
         for extension_name in pyviz_extensions:
             extension = PYVIZ_EXTENSIONS[extension_name]
@@ -648,7 +646,7 @@ class Component:
 
     def _get_template_pyviz_resources(self, asset_folders):
         template = ""
-        pyviz_extensions = self.get_pyviz_extensions().union({ "panel", "bokeh" })
+        pyviz_extensions = self.get_pyviz_extensions().union({ "bokeh" })
         
         for extension_name in pyviz_extensions:
             extension = PYVIZ_EXTENSIONS[extension_name]
@@ -786,6 +784,91 @@ class Component:
             )
         return template
 
+    def get_data_template(self):
+        template = ""
+
+        data = self.get_component_data()
+        data_value_elements = list()
+        data_elements = list()
+
+        for component_id in data:
+            item = data[component_id]
+
+            try:
+                json_data = json.dumps(item["data"])
+                data_value_elements.append(component_id + ": " + json_data)
+            except:
+                pass
+
+            if isinstance(item["data"], Component):
+                data_value_id = item["data"].id
+            else:
+                data_value_id = component_id
+            item_elements = [
+                item["prefix"],
+                'data: window.data_values["' + data_value_id + '"]',
+                item["postfix"],
+            ]
+            data_elements.append(
+                component_id
+                + """: {
+      """
+                + """,
+      """.join(
+                    filter(None, item_elements)
+                )
+                + """
+    }"""
+            )
+
+        if data_value_elements:
+            data_script = (
+                """
+window.data_values = {
+    """
+                + """,
+      """.join(
+                    data_value_elements
+                )
+                + """
+}"""
+            ).replace("</script", r"\u003c/script")
+        else:
+            data_script = ""
+
+        data_prefix = self.get_data_prefix()
+        data_postfix = self.get_data_postfix()
+
+        if data_elements or data_prefix or data_postfix:
+            if not data_prefix:
+                data_prefix = """
+window.data = {
+    """
+            if not data_postfix:
+                data_postfix = """
+}"""
+            custom_data_script = (
+                data_prefix
+                + """,
+    """.join(
+                    data_elements
+                )
+                + data_postfix
+            ).replace("</script", r"\u003c/script")
+        else:
+            custom_data_script = ""
+
+        template += (
+            """
+<script type="text/javascript">
+"""
+            + data_script + """
+"""
+            + custom_data_script + """
+</script>"""
+        )
+        return template
+
     def _get_template_contents_bottom(self, asset_folders):
         template = ""
         append_body_js = self.get_append_body_js()
@@ -824,56 +907,7 @@ class Component:
                 + "</script>"
             )
 
-        data_prefix = self.get_data_prefix()
-        if not data_prefix:
-            data_prefix = """
-window.data = {
-    """
-        data_postfix = self.get_data_postfix()
-        if not data_postfix:
-            data_postfix = """
-}"""
-
-        data = self.get_component_data()
-        data_elements = list()
-
-        for component_id in data:
-            item = data[component_id]
-            item_elements = [
-                item["prefix"],
-                "data: " + json.dumps(item["data"]),
-                item["postfix"],
-            ]
-            data_elements.append(
-                component_id
-                + """: {
-                """
-                + """,
-                """.join(
-                    filter(None, item_elements)
-                )
-                + """
-    }"""
-            )
-
-        data_script = (
-            data_prefix
-            + """,
-            """.join(
-                data_elements
-            )
-            + data_postfix
-        ).replace("</script", r"\u003c/script")
-
-        if data_script:
-            template += (
-                """
-<script type="text/javascript">
-"""
-                + data_script
-                + """
-</script>"""
-            )
+        template += self.get_data_template()
 
         return template
 
