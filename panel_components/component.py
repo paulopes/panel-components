@@ -260,9 +260,7 @@ class Component:
     def get_append_head_no_nb_css(self):
         append_head_no_nb_css = self._append_head_no_nb_css.copy()
         for child in self.children:
-            append_head_no_nb_css = dict(
-                child.get_append_head_no_nb_css(), **append_head_no_nb_css
-            )
+            append_head_no_nb_css.update(child.get_append_head_no_nb_css())
         return append_head_no_nb_css
 
     def append_head_no_nb_js(self, **files):
@@ -272,9 +270,7 @@ class Component:
     def get_append_head_no_nb_js(self):
         append_head_no_nb_js = self._append_head_no_nb_js.copy()
         for child in self.children:
-            append_head_no_nb_js = dict(
-                child.get_append_head_no_nb_js(), **append_head_no_nb_js
-            )
+            append_head_no_nb_js.update(child.get_append_head_no_nb_js())
         return append_head_no_nb_js
 
     def pyviz_extensions(self, *extensions):
@@ -348,7 +344,7 @@ class Component:
     def get_component_data(self):
         component_data = self._component_data.copy()
         for child in self.children:
-            component_data = dict(child.get_component_data(), **component_data)
+            component_data.update(child.get_component_data())
         return component_data
 
     def get_data_prefix(self):
@@ -376,7 +372,7 @@ class Component:
     def get_panel_css_files(self):
         panel_css_files = self._panel_css_files.copy()
         for child in self.children:
-            panel_css_files = dict(child.get_panel_css_files(), **panel_css_files)
+            panel_css_files.update(child.get_panel_css_files())
         return panel_css_files
 
     def panel_raw_css(self, **styles):
@@ -386,7 +382,7 @@ class Component:
     def get_panel_raw_css(self):
         panel_raw_css = self._panel_raw_css.copy()
         for child in self.children:
-            panel_raw_css = dict(child.get_panel_raw_css(), **panel_raw_css)
+            panel_raw_css.update(child.get_panel_raw_css())
         return panel_raw_css
 
     def append_body_js(self, **files):
@@ -396,7 +392,7 @@ class Component:
     def get_append_body_js(self):
         append_body_js = self._append_body_js.copy()
         for child in self.children:
-            append_body_js = dict(child.get_append_body_js(), **append_body_js)
+            append_body_js.update(child.get_append_body_js())
         return append_body_js
 
     def append_body_script(self, **scripts):
@@ -406,9 +402,7 @@ class Component:
     def get_append_body_script(self):
         append_body_script = self._append_body_script.copy()
         for child in self.children:
-            append_body_script = dict(
-                child.get_append_body_script(), **append_body_script
-            )
+            append_body_script.update(child.get_append_body_script())
         return append_body_script
 
     def append_body_no_nb_js(self, **files):
@@ -418,9 +412,7 @@ class Component:
     def get_append_body_no_nb_js(self):
         append_body_no_nb_js = self._append_body_no_nb_js.copy()
         for child in self.children:
-            append_body_no_nb_js = dict(
-                child.get_append_body_no_nb_js(), **append_body_no_nb_js
-            )
+            append_body_no_nb_js.update(child.get_append_body_no_nb_js())
         return append_body_no_nb_js
 
     def append_body_no_nb_script(self, **scripts):
@@ -430,9 +422,7 @@ class Component:
     def get_append_body_no_nb_script(self):
         append_body_no_nb_script = self._append_body_no_nb_script.copy()
         for child in self.children:
-            append_body_no_nb_script = dict(
-                child.get_append_body_no_nb_script(), **append_body_no_nb_script
-            )
+            append_body_no_nb_script.update(child.get_append_body_no_nb_script())
         return append_body_no_nb_script
 
     def files_uris(self, *files):
