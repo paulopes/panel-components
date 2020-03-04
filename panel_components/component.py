@@ -126,10 +126,12 @@ class Component:
         self.tag_name = tag_name
         self._xml_closing_style = xml_closing_style
 
-        if title:
+        if title and tag_name is not "a":
             self.title = title
         else:
             self.title = ""
+            if tag_name is "a":
+                attributes["title"] = title
 
         if main:
             if main is True:  # Instead of just truthy
