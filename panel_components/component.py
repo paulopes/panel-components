@@ -977,7 +977,7 @@ window.data = {
 """
         )
 
-    def app(self):
+    def servable(self):
         asset_folders = self.get_asset_folders()
         for filename in self.get_files_uris():
             if self.main:
