@@ -35,7 +35,7 @@ def get_dir_name(folder=None):
 
 def _read_file(src_path):
     file_contents = ""
-    if os.path.isfile(src_path):
+    if src_path and os.path.isfile(src_path):
         with open(src_path) as src_file:
             file_contents = src_file.read()
 
@@ -57,7 +57,7 @@ def find_src_file(filename, src_folder, dst_folder=None, asset_folders=None):
         dst_folder = os.sep.join([dst_folder] + file_path_elements[:-1])
         dst_file = os.path.join(dst_folder, file_path_elements[-1])
 
-        if not os.path.isfile(dst_file):
+        if not dst_file or not os.path.isfile(dst_file):
 
             if not os.path.exists(dst_folder):
                 try:
@@ -68,7 +68,7 @@ def find_src_file(filename, src_folder, dst_folder=None, asset_folders=None):
 
     src_file = os.path.join(src_folder, *file_path_elements)
     src_exists = False
-    if os.path.isfile(src_file):
+    if src_file and os.path.isfile(src_file):
         src_exists = True
     elif asset_folders:
         for folder in reversed(asset_folders):
@@ -77,10 +77,10 @@ def find_src_file(filename, src_folder, dst_folder=None, asset_folders=None):
                 for element in folder.rstrip("/").split("/")
                 if len(element) > 0 and element[0] != "."
             ]
-            if folder[0] == "/":
+            if folder.startswith("/"):
                 folder_path_elements[0] = "/" + folder_path_elements[0]
             src_file = os.path.join(*folder_path_elements, *file_path_elements)
-            if os.path.isfile(src_file):
+            if src_file and os.path.isfile(src_file):
                 src_exists = True
                 break
     if src_exists:
@@ -137,7 +137,7 @@ def make_inline_uri(src_file, src_folder, dst_folder, asset_folders=None):
     src_exists = False
 
     if src_file[0] in ["/", "~"]:
-        if os.path.isfile(src_file):
+        if src_file and os.path.isfile(src_file):
             src_exists = True
     else:
         file_path_elements = [
@@ -147,7 +147,7 @@ def make_inline_uri(src_file, src_folder, dst_folder, asset_folders=None):
         ]
 
         src_file = os.path.join(src_folder, *file_path_elements)
-        if os.path.isfile(src_file):
+        if src_file and os.path.isfile(src_file):
             src_exists = True
         elif asset_folders:
             for folder in reversed(asset_folders):
@@ -156,8 +156,10 @@ def make_inline_uri(src_file, src_folder, dst_folder, asset_folders=None):
                     for element in folder.strip("/").split("/")
                     if len(element) > 0 and element[0] != "."
                 ]
+                if folder.startswith("/"):
+                    folder_path_elements[0] = "/" + folder_path_elements[0]
                 src_file = os.path.join(*folder_path_elements, *file_path_elements)
-                if os.path.isfile(src_file):
+                if src_file and os.path.isfile(src_file):
                     src_exists = True
                     break
 

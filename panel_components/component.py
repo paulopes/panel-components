@@ -905,7 +905,7 @@ window.data = {
 
         return template
 
-    def _get_template(self, asset_folders, nb=IS_A_JUPYTER_NOTEBOOK):
+    def _get_template(self, asset_folders):
         if self.main:
             self._make_available_head_resources(asset_folders)
             self._make_available_head_no_nb(asset_folders)
@@ -941,18 +941,18 @@ window.data = {
             + template_escape(self._get_template_body_classes_attr())
             + """>
 """
-            + template_escape(self._get_template_contents_top(asset_folders=asset_folders, nb=nb))
+            + template_escape(self._get_template_contents_top(asset_folders=asset_folders, nb=False))
             + """
     {% block inner_body %}
     {% block contents %}
 """
-            + self.get_html(self.main, asset_folders=asset_folders, nb=nb)
+            + self.get_html(self.main, asset_folders=asset_folders, nb=False)
             + self._no_panel_spacer
             + """
     {% endblock %}
     {{ plot_script | indent(8) }}
 """
-            + template_escape(self._get_template_contents_bottom(asset_folders=asset_folders, nb=nb))
+            + template_escape(self._get_template_contents_bottom(asset_folders=asset_folders, nb=False))
             + template_escape(self._get_template_contents_bottom_no_nb(asset_folders))
             + """
     {% endblock %}
