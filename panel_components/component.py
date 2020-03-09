@@ -495,7 +495,7 @@ class Component:
         self._post_html += template_escape(markup)
         return self
 
-    def get_attributes(self, main, asset_folders):
+    def get_attributes(self, main, asset_folders, nb=IS_A_JUPYTER_NOTEBOOK):
         attributes = ""
         for attr in self.attributes:
             attr_value = self.attributes[attr]
@@ -503,8 +503,10 @@ class Component:
             if attr in self._files_attrs:
                 if main:
                     self.files_uris(attr_value)
-                if not main or IS_A_JUPYTER_NOTEBOOK:
-                    if attr_value in self._files_uris:
+                if not main or nb:
+                    if attr_value.startswith('?') and nb:
+                        attr_value = None
+                    elif attr_value in self._files_uris:
                         attr_url = urlsplit(attr_value).geturl()
                         if attr_url:
                             uri_value = make_inline_uri(
@@ -691,7 +693,7 @@ class Component:
         else:
             return ""
 
-    def _get_template_contents_top(self, asset_folders):
+    def _get_template_contents_top(self, asset_folders, nb=IS_A_JUPYTER_NOTEBOOK):
         template = ""
         prepend_body_css = self.get_prepend_body_css()
         for item_name in prepend_body_css:
@@ -703,7 +705,7 @@ class Component:
                     dst_folder=self._dst_folder,
                     asset_folders=asset_folders,
                 )
-            if self.main and not IS_A_JUPYTER_NOTEBOOK:
+            if self.main and not nb:
                 template += """
 <link href="/{}/{}/{}" rel="stylesheet" crossorigin="anonymous">""".format(
                     self.main, self._dst_folder, item
@@ -861,7 +863,7 @@ window.data = {
         )
         return template
 
-    def _get_template_contents_bottom(self, asset_folders):
+    def _get_template_contents_bottom(self, asset_folders, nb=IS_A_JUPYTER_NOTEBOOK):
         template = ""
         append_body_js = self.get_append_body_js()
         for item_name in append_body_js:
@@ -873,7 +875,7 @@ window.data = {
                     dst_folder=self._dst_folder,
                     asset_folders=asset_folders,
                 )
-            if self.main and not IS_A_JUPYTER_NOTEBOOK:
+            if self.main and not nb:
                 template += """
 <script src="/{}/{}/{}" type="text/javascript" crossorigin="anonymous"></script>""".format(
                     self.main, self._dst_folder, item
@@ -903,7 +905,7 @@ window.data = {
 
         return template
 
-    def _get_template(self, asset_folders):
+    def _get_template(self, asset_folders, nb=IS_A_JUPYTER_NOTEBOOK):
         if self.main:
             self._make_available_head_resources(asset_folders)
             self._make_available_head_no_nb(asset_folders)
@@ -939,18 +941,18 @@ window.data = {
             + template_escape(self._get_template_body_classes_attr())
             + """>
 """
-            + template_escape(self._get_template_contents_top(asset_folders))
+            + template_escape(self._get_template_contents_top(asset_folders=asset_folders, nb=nb))
             + """
     {% block inner_body %}
     {% block contents %}
 """
-            + self.get_html(self.main, asset_folders=asset_folders)
+            + self.get_html(self.main, asset_folders=asset_folders, nb=nb)
             + self._no_panel_spacer
             + """
     {% endblock %}
     {{ plot_script | indent(8) }}
 """
-            + template_escape(self._get_template_contents_bottom(asset_folders))
+            + template_escape(self._get_template_contents_bottom(asset_folders=asset_folders, nb=nb))
             + template_escape(self._get_template_contents_bottom_no_nb(asset_folders))
             + """
     {% endblock %}
@@ -959,17 +961,17 @@ window.data = {
 """
         )
 
-    def _get_nb_template(self, asset_folders):
+    def _get_nb_template(self, asset_folders, nb=IS_A_JUPYTER_NOTEBOOK):
         return (
             """\
 {% extends base %}
 
 {% block contents %}
 """
-            + template_escape(self._get_template_contents_top(asset_folders))
+            + template_escape(self._get_template_contents_top(asset_folders=asset_folders, nb=nb))
             + self.get_html(self.main, asset_folders=asset_folders)
             + self._no_panel_spacer
-            + template_escape(self._get_template_contents_bottom(asset_folders))
+            + template_escape(self._get_template_contents_bottom(asset_folders=asset_folders, nb=nb))
             + """
 {% endblock %}
 """
@@ -1011,7 +1013,7 @@ window.data = {
         tmpl.servable(title=self.title)
         return tmpl
 
-    def get_html(self, main, asset_folders=None):
+    def get_html(self, main, asset_folders=None, nb=IS_A_JUPYTER_NOTEBOOK):
         if asset_folders is None:
             asset_folders = self.get_asset_folders()
         tag_name = self.tag_name
@@ -1025,7 +1027,7 @@ window.data = {
             if tag_name:
                 markup = """
 <{}{}>""".format(
-                    tag_name, self.get_attributes(main, asset_folders)
+                    tag_name, self.get_attributes(main, asset_folders=asset_folders, nb=nb)
                 )
 
             markup += self._pre_html
@@ -1044,14 +1046,14 @@ window.data = {
         elif tag_name:
             markup = """
 <{}{} />""".format(
-                tag_name, self.get_attributes(main, asset_folders)
+                tag_name, self.get_attributes(main, asset_folders=asset_folders, nb=nb)
             )
 
         return markup
 
-    def _repr_html_(self, asset_folders=None):
+    def _repr_html_(self, asset_folders=None, nb=IS_A_JUPYTER_NOTEBOOK):
         if asset_folders is None:
             asset_folders = self.get_asset_folders()
-        return self._get_template_contents_top(asset_folders) + """ 
+        return self._get_template_contents_top(asset_folders=asset_folders, nb=nb) + """ 
 """ + self.get_html(self.main, asset_folders)+ """ 
-""" + self._get_template_contents_bottom(asset_folders)
+""" + self._get_template_contents_bottom(asset_folders=asset_folders, nb=nb)
