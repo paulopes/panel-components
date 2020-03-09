@@ -126,11 +126,11 @@ class Component:
         self.tag_name = tag_name
         self._xml_closing_style = xml_closing_style
 
-        if title and tag_name is not "a":
+        if title and tag_name != "a":
             self.title = title
         else:
             self.title = ""
-            if tag_name is "a":
+            if tag_name == "a":
                 attributes["title"] = title
 
         if main:
@@ -228,7 +228,7 @@ class Component:
             elif attr_value is False:
                 attr_value = "false"
             elif isinstance(attr_value, str):
-                if attr in ["href", "src"]:
+                if attr in ["href", "src"] or self.tag_name == "object" and attr == "data":
                     attr_value = attr_value.strip()
                     attr_schema = attr_value.lower()[:6]
                     if not (
@@ -516,7 +516,7 @@ class Component:
                             if uri_value:
                                 attr_value = uri_value
                 else:
-                    if len(attr_value) is not 0 and attr is "src":
+                    if len(attr_value) is not 0 and attr == "src":
                         attr_value = "{}/{}/{}".format(
                             main, self._dst_folder, attr_value
                         )
@@ -944,7 +944,7 @@ window.data = {
     {% block inner_body %}
     {% block contents %}
 """
-            + self._repr_html_(asset_folders=asset_folders)
+            + self.get_html(self.main, asset_folders=asset_folders)
             + self._no_panel_spacer
             + """
     {% endblock %}
@@ -967,7 +967,7 @@ window.data = {
 {% block contents %}
 """
             + template_escape(self._get_template_contents_top(asset_folders))
-            + self._repr_html_(asset_folders=asset_folders)
+            + self.get_html(self.main, asset_folders=asset_folders)
             + self._no_panel_spacer
             + template_escape(self._get_template_contents_bottom(asset_folders))
             + """
@@ -1011,7 +1011,9 @@ window.data = {
         tmpl.servable(title=self.title)
         return tmpl
 
-    def get_html(self, main, asset_folders):
+    def get_html(self, main, asset_folders=None):
+        if asset_folders is None:
+            asset_folders = self.get_asset_folders()
         tag_name = self.tag_name
         markup = ""
         if (
@@ -1050,4 +1052,6 @@ window.data = {
     def _repr_html_(self, asset_folders=None):
         if asset_folders is None:
             asset_folders = self.get_asset_folders()
-        return self.get_html(self.main, asset_folders)
+        return self._get_template_contents_top(asset_folders) + """ 
+""" + self.get_html(self.main, asset_folders)+ """ 
+""" + self._get_template_contents_bottom(asset_folders)
