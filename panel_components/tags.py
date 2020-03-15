@@ -2,7 +2,7 @@
 from __future__ import print_function, division
 
 import sys
-from .component import Component
+from .component import make_tag_function
 
 
 tag_list = [
@@ -62,7 +62,7 @@ tag_list = [
     "main",
     "map",
     "mark",
-    "math", # Unfortunatelly only FF and Safari support MathML, hence not adding those tags here.
+    "math",  # Unfortunatelly only FF and Safari support MathML, hence not adding those tags here.
     "menu",
     "meter",
     "nav",
@@ -109,7 +109,6 @@ tag_list = [
     "ul",
     "var",
     "video",
-
     "area",
     "base",
     "br",
@@ -277,25 +276,9 @@ xml_closing_style_tags = {
     "view",
 }
 
-
-def make_tag_function(tag_name):
-    """Generate a function that returns a component for an html tag."""
-
-    def tag_function(*children, **attributes):
-        component = Component(
-            *children,
-            tag_name=tag_name,
-            xml_closing_style=(tag_name in xml_closing_style_tags),
-            **attributes
-        )
-        return component
-
-    return tag_function
-
-
 # Create a module-level function for each html tag
 module = sys.modules[__name__]
 for tag in tag_list:
-    setattr(module, tag, make_tag_function(tag))
+    setattr(module, tag, make_tag_function(tag, tag in xml_closing_style_tags))
 
 __all__ = tag_list

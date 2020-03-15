@@ -55,9 +55,7 @@ PYVIZ_EXTENSIONS = {
     },
     "katex": {
         "css": {
-            "cdn": [
-                "//cdnjs.cloudflare.com/ajax/libs/KaTeX/0.6.0/katex.min.css",
-            ],
+            "cdn": ["//cdnjs.cloudflare.com/ajax/libs/KaTeX/0.6.0/katex.min.css",],
             "local": ["katex/katex.css",],
         },
         "js": {
@@ -108,6 +106,24 @@ PYVIZ_EXTENSIONS = {
 }
 
 
+def make_tag_function(tag, xml_closing_style=False):
+    """Generate a function that returns a component for an html tag."""
+
+    def tag_function(*children, **attributes):
+        if xml_closing_style and not children:
+            component = Component(opening="<" + tag + "/>", **attributes)
+        else:
+            component = Component(
+                *children,
+                opening="<" + tag + ">",
+                closing="</" + tag + ">",
+                **attributes
+            )
+        return component
+
+    return tag_function
+
+
 class Component:
     """Encapsulates all the html content, css and js requirements, as well as
     methods that assist in creating and generating a template (or html partial)
@@ -117,21 +133,15 @@ class Component:
         self,
         *children,
         tag_name=None,
-        xml_closing_style=False,
-        title=None,
+        opening="",
+        closing="",
         main=None,
         css_classes=None,
         **attributes
     ):
         self.tag_name = tag_name
-        self._xml_closing_style = xml_closing_style
-
-        if title and tag_name != "a":
-            self.title = title
-        else:
-            self.title = ""
-            if tag_name == "a":
-                attributes["title"] = title
+        self._opening = opening
+        self._closing = closing
 
         if main:
             if main is True:  # Instead of just truthy
@@ -155,7 +165,7 @@ class Component:
         self._append_head_no_nb_js = dict()
 
         self._pyviz_extensions = set()
-        
+
         self._body_classes = set()
 
         self._prepend_body_css = dict()
@@ -228,7 +238,11 @@ class Component:
             elif attr_value is False:
                 attr_value = "false"
             elif isinstance(attr_value, str):
-                if attr in ["href", "src"] or self.tag_name == "object" and attr == "data":
+                if (
+                    attr in ["href", "src"]
+                    or self.tag_name == "object"
+                    and attr == "data"
+                ):
                     attr_value = attr_value.strip()
                     attr_schema = attr_value.lower()[:6]
                     if not (
@@ -449,6 +463,10 @@ class Component:
             asset_folders = child.get_asset_folders() + asset_folders
         return asset_folders
 
+    def opening(self, markup):
+        self._opening += markup
+        return self
+
     def prepend_html(self, markup):
         self._pre_html += template_escape(markup)
         return self
@@ -492,7 +510,11 @@ class Component:
         return self
 
     def append_html(self, markup):
-        self._post_html += template_escape(markup)
+        self._post_html = template_escape(markup) + self._post_html
+        return self
+
+    def closing(self, markup):
+        self._closing += markup
         return self
 
     def get_attributes(self, main, asset_folders, nb=IS_A_JUPYTER_NOTEBOOK):
@@ -504,7 +526,7 @@ class Component:
                 if main:
                     self.files_uris(attr_value)
                 if not main or nb:
-                    if attr_value.startswith('?') and nb:
+                    if attr_value.startswith("?") and nb:
                         attr_value = None
                     elif attr_value in self._files_uris:
                         attr_url = urlsplit(attr_value).geturl()
@@ -569,7 +591,7 @@ class Component:
                 dst_folder=self._dst_folder,
                 asset_folders=asset_folders,
             )
-                
+
     def _get_template_head_no_nb(self, asset_folders):
         template = ""
         append_head_no_nb_js = self.get_append_head_no_nb_js()
@@ -612,11 +634,11 @@ class Component:
         return template
 
     def _make_available_head_resources(self, asset_folders):
-        pyviz_extensions = self.get_pyviz_extensions().union({ "bokeh" })
-        
+        pyviz_extensions = self.get_pyviz_extensions().union({"bokeh"})
+
         for extension_name in pyviz_extensions:
             extension = PYVIZ_EXTENSIONS[extension_name]
-            
+
             if "css" in extension:
                 # TODO add support for CDN resources
                 if "local" in extension["css"]:
@@ -640,11 +662,11 @@ class Component:
 
     def _get_template_pyviz_resources(self, asset_folders):
         template = ""
-        pyviz_extensions = self.get_pyviz_extensions().union({ "bokeh" })
-        
+        pyviz_extensions = self.get_pyviz_extensions().union({"bokeh"})
+
         for extension_name in pyviz_extensions:
             extension = PYVIZ_EXTENSIONS[extension_name]
-            
+
             if "css" in extension:
                 # TODO add support for CDN resources
                 if "local" in extension["css"]:
@@ -660,15 +682,17 @@ class Component:
 <style>
 """
                                 + get_inline_css(
-                                    item, src_folder=self._src_folder, asset_folders=asset_folders,
+                                    item,
+                                    src_folder=self._src_folder,
+                                    asset_folders=asset_folders,
                                 )
                                 + "</style>"
                             )
-                            
+
             if "js" in extension:
                 # TODO add support for CDN resources
                 if "local" in extension["js"]:
-                    for item in extension["js"]["local"]:                        
+                    for item in extension["js"]["local"]:
                         if self.main:
                             template += """
 <script src="/{}/{}/{}" type="text/javascript" crossorigin="anonymous"></script>""".format(
@@ -676,11 +700,13 @@ class Component:
                             )
                         else:
                             template += (
-                    """
+                                """
 <script type="text/javascript">
 """
                                 + get_inline_js(
-                                    item, src_folder=self._src_folder, asset_folders=asset_folders,
+                                    item,
+                                    src_folder=self._src_folder,
+                                    asset_folders=asset_folders,
                                 )
                                 + "</script>"
                             )
@@ -742,7 +768,7 @@ class Component:
                 dst_folder=self._dst_folder,
                 asset_folders=asset_folders,
             )
-                
+
     def _get_template_contents_bottom_no_nb(self, asset_folders):
         template = ""
         append_body_no_nb_js = self.get_append_body_no_nb_js()
@@ -856,9 +882,11 @@ window.data = {
             """
 <script type="text/javascript">
 """
-            + data_script + """
+            + data_script
+            + """
 """
-            + custom_data_script + """
+            + custom_data_script
+            + """
 </script>"""
         )
         return template
@@ -941,7 +969,9 @@ window.data = {
             + template_escape(self._get_template_body_classes_attr())
             + """>
 """
-            + template_escape(self._get_template_contents_top(asset_folders=asset_folders, nb=False))
+            + template_escape(
+                self._get_template_contents_top(asset_folders=asset_folders, nb=False)
+            )
             + """
     {% block inner_body %}
     {% block contents %}
@@ -952,7 +982,11 @@ window.data = {
     {% endblock %}
     {{ plot_script | indent(8) }}
 """
-            + template_escape(self._get_template_contents_bottom(asset_folders=asset_folders, nb=False))
+            + template_escape(
+                self._get_template_contents_bottom(
+                    asset_folders=asset_folders, nb=False
+                )
+            )
             + template_escape(self._get_template_contents_bottom_no_nb(asset_folders))
             + """
     {% endblock %}
@@ -968,16 +1002,20 @@ window.data = {
 
 {% block contents %}
 """
-            + template_escape(self._get_template_contents_top(asset_folders=asset_folders, nb=nb))
+            + template_escape(
+                self._get_template_contents_top(asset_folders=asset_folders, nb=nb)
+            )
             + self.get_html(self.main, asset_folders=asset_folders)
             + self._no_panel_spacer
-            + template_escape(self._get_template_contents_bottom(asset_folders=asset_folders, nb=nb))
+            + template_escape(
+                self._get_template_contents_bottom(asset_folders=asset_folders, nb=nb)
+            )
             + """
 {% endblock %}
 """
         )
 
-    def servable(self):
+    def servable(self, *args, **kwargs):
         asset_folders = self.get_asset_folders()
         for filename in self.get_files_uris():
             if self.main:
@@ -1010,50 +1048,52 @@ window.data = {
         if panel_raw_css:
             pn.extension(raw_css=list(panel_raw_css.values()))
 
-        tmpl.servable(title=self.title)
+        tmpl.servable(*args, **kwargs)
         return tmpl
 
     def get_html(self, main, asset_folders=None, nb=IS_A_JUPYTER_NOTEBOOK):
         if asset_folders is None:
             asset_folders = self.get_asset_folders()
-        tag_name = self.tag_name
-        markup = ""
-        if (
-            not self._xml_closing_style
-            or self.children
-            or self._pre_html
-            or self._post_html
-        ):
-            if tag_name:
-                markup = """
-<{}{}>""".format(
-                    tag_name, self.get_attributes(main, asset_folders=asset_folders, nb=nb)
-                )
 
-            markup += self._pre_html
+        opening = self._opening
+        if opening.endswith("/>"):
+            opening_close = "/>"
+            opening = opening[:-2]
+        else:
+            if opening.endswith(">"):
+                opening_close = ">"
+                opening = opening[:-1]
+            elif opening:
+                opening_close = ">"
+            else:
+                opening_close = ""
+        closing = self._post_html + self._closing
 
-            for child in self.children:
-                markup += child.get_html(main, asset_folders)
-
-            markup += self._post_html
-
-            if tag_name:
-                markup += """
-</{}>""".format(
-                    tag_name
-                )
-
-        elif tag_name:
-            markup = """
-<{}{} />""".format(
-                tag_name, self.get_attributes(main, asset_folders=asset_folders, nb=nb)
+        if opening:
+            opening += (
+                self.get_attributes(main, asset_folders=asset_folders, nb=nb)
+                + opening_close
             )
+
+        markup = opening + self._pre_html
+
+        for child in self.children:
+            markup += child.get_html(main, asset_folders)
+
+        markup += closing
 
         return markup
 
     def _repr_html_(self, asset_folders=None, nb=IS_A_JUPYTER_NOTEBOOK):
         if asset_folders is None:
             asset_folders = self.get_asset_folders()
-        return self._get_template_contents_top(asset_folders=asset_folders, nb=nb) + """ 
-""" + self.get_html(self.main, asset_folders)+ """ 
-""" + self._get_template_contents_bottom(asset_folders=asset_folders, nb=nb)
+        return (
+            self._get_template_contents_top(asset_folders=asset_folders, nb=nb)
+            + """ 
+"""
+            + self.get_html(self.main, asset_folders)
+            + """ 
+"""
+            + self._get_template_contents_bottom(asset_folders=asset_folders, nb=nb)
+        )
+
