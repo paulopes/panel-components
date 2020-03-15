@@ -20,24 +20,29 @@ def vue(*children, template="", main=None, **attributes):
     # - We don't conflict with Web Component libraries we may also be using;
     # - An x-template script tag works in IE11, in case we come across it.
     template_tag = script(
-        div(*children, **attributes).prepend_html(template),
-        type="text/x-template",
+        div(*children, **attributes).prepend_html(template), type="text/x-template",
     )
 
     component = Component(app_tag, template_tag, main=main)
 
-    component.data_prefix = '''
+    component.data_prefix = (
+        """
 var app = new Vue({
-  el: "#''' + app_tag.id + '''",
-  template: "#''' + template_tag.id + '''",
+  el: "#"""
+        + app_tag.id
+        + """",
+  template: "#"""
+        + template_tag.id
+        + """",
   data: {
-    '''
-    component.data_postfix = '''
+    """
+    )
+    component.data_postfix = """
   }
-});'''
-    
+});"""
+
     component.asset_folders(
-        os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "www")
     )
     component.append_body_js(vue="vue/vue.min.js")
 

@@ -153,7 +153,7 @@ class Component:
 
         self._id = ""
 
-        self._src_folder = "assets"
+        self._src_folder = "www"
         self._dst_folder = "static"
 
         self.children = list()
