@@ -24,7 +24,12 @@ def is_a_number(x):
 
 
 def template_escape(text):
-    return text.replace("{{", "{{'{{'}}").replace("{%", "{{'{%'}}")
+    escaped_text = (
+        text.replace("{{", "{{'{{'}}")
+        .replace("{%", "{{'{%'}}")
+        .replace("{#", "{{'{#'}}")
+    )
+    return escaped_text
 
 
 def get_dir_name(folder=None):
