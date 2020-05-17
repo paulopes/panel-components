@@ -544,10 +544,6 @@ class Component:
                         attr_value = "{}/{}/{}".format(
                             main, self._dst_folder, attr_value
                         )
-                    elif len(attr_value) is 0:
-                        attributes += " {}".format(attr)
-                    else:
-                        attributes += ' {}="{}"'.format(attr, attr_value)
 
             if attr_value is not None:
                 if len(attr_value) is 0:
@@ -1096,4 +1092,3 @@ window.data = {
 """
             + self._get_template_contents_bottom(asset_folders=asset_folders, nb=nb)
         )
-
