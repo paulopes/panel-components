@@ -540,13 +540,13 @@ class Component:
                             if uri_value:
                                 attr_value = uri_value
                 else:
-                    if len(attr_value) is not 0 and attr == "src":
+                    if len(attr_value) != 0 and attr == "src":
                         attr_value = "{}/{}/{}".format(
                             main, self._dst_folder, attr_value
                         )
 
             if attr_value is not None:
-                if len(attr_value) is 0:
+                if len(attr_value) == 0:
                     attributes += " {}".format(attr)
                 else:
                     attributes += ' {}="{}"'.format(attr, attr_value)
