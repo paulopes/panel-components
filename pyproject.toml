@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "panel-components"
-version = "0.1.0"
+version = "0.1.1"
 description = "HTML components for Panel templates."
 authors = ["Paulo Lopes <paulopes00@gmail.com>"]
 license = "Apache-2.0"

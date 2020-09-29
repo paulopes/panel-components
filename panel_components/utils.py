@@ -41,7 +41,7 @@ def get_dir_name(folder=None):
 def _read_file(src_path):
     file_contents = ""
     if src_path and os.path.isfile(src_path):
-        with open(src_path) as src_file:
+        with open(src_path, encoding="utf8") as src_file:
             file_contents = src_file.read()
 
     return file_contents
