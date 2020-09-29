@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "panel-components"
+version = "0.1.0"
+description = "HTML components for Panel templates."
+authors = ["Paulo Lopes <paulopes00@gmail.com>"]
+license = "Apache-2.0"
+
+[tool.poetry.dependencies]
+python = "^3.6"
+panel = "^0.9.7"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
