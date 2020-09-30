@@ -24,6 +24,7 @@ def fast(*children, **attributes):
     fast_template = div(
         module,
         provider,
+        main=True,
     )
     fast_template._panel_raw_css["fast-template"]="body {margin: 0px}"
     return fast_template
@@ -40,4 +41,7 @@ layout = fast(
     )
 )
 
-layout.servable()
+if __name__.startswith("bokeh"):
+    layout.servable()
+elif __name__=="__main__":
+    layout.servable().show(port=5007)
