@@ -2,6 +2,7 @@ from panel_components.component import make_tag_function
 from panel_components.tags import script, div, h1
 import holoviews as hv
 hv.extension('bokeh')
+import panel as pn
 
 fast_design_system_provider = make_tag_function("fast-design-system-provider")
 fast_button = make_tag_function("fast-button")
@@ -24,7 +25,7 @@ def fast(*children, **attributes):
     fast_template = div(
         module,
         provider,
-        main="",
+        main="", # Needed in order to include bokeh assets. Don't set to True.
     )
     fast_template._panel_raw_css["fast-template"]="body {margin: 0px}"
     fast_template._src_folder="panel_components\\www" # Needed in order to get assets copied
@@ -35,8 +36,8 @@ layout = fast(
         fast_card(
             h1("A Card"),
             fast_button("Click Me", appearance="accent"),
-            bars,
-            style="width:300px;height:500px;margin:20px"
+            pn.pane.HoloViews(bars, margin=20, sizing_mode="stretch_width"),
+            style="width:400px;height:500px;margin:20px"
         ),
 
     )
