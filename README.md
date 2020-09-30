@@ -55,13 +55,11 @@ Let's try a **Hello World** example.
 **File**: `hello_world.py`
 
 ```python
-import panel as pn
 from panel_components.tags import h1
 
 layout = h1("Hello World")
 
-app = pn.panel(layout)
-app.servable()
+layout.servable()
 ```
 
 ![Hello world](assets/images/hello_world.png)
