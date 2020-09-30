@@ -24,9 +24,10 @@ def fast(*children, **attributes):
     fast_template = div(
         module,
         provider,
-        main=True,
+        main="",
     )
     fast_template._panel_raw_css["fast-template"]="body {margin: 0px}"
+    fast_template._src_folder="panel_components\\www" # Needed in order to get assets copied
     return fast_template
 
 layout = fast(
