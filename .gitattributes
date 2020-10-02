@@ -1,0 +1,16 @@
+*.py text
+*.html text
+*.css text
+*.js text
+*.md text
+*.rst text
+*.txt
+.gitattributes text
+.gitignore text
+build.sh text
+LICENSE text
+pyproject.toml text
+VERSION
+
+*.png binary
+*.jpg binary
