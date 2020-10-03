@@ -32,7 +32,7 @@ class TemporaryResources:  # pylint: disable=(too-many-instance-attributes
         js_files: Optional[Dict] = None,
         include_panel_css: bool = True,
     ):
-        """The purpose of the TemporaryResources context manager is to enable using temporary,
+        """The purpose of the `TemporaryResources` context manager is to enable using temporary,
         specific configuration of resources when creating a custom Template.
 
         If you use the global configuration `pn.config` for your templates you will include the same
@@ -61,6 +61,8 @@ class TemporaryResources:  # pylint: disable=(too-many-instance-attributes
         >>> pn.config.raw_css
         ['body {color: black}']
         >>> "body {color: white}" in temporary_header
+        True
+        >>> "body {color: black}" not in temporary_header
         True
 
         Please note that the `pn.io.resources.Resources().render` function is what is normally
