@@ -124,10 +124,11 @@ class TemporaryResources:  # pylint: disable=(too-many-instance-attributes
         should be included in the temporary list of models/ extensions.
 
         Args:
-            extensions (Optional[Set], optional): [description]. Defaults to None.
+            extensions (Optional[Set], optional): A set of temporary extensions. For example
+                {"katex", "deckgl"}. Defaults to None.
 
         Returns:
-            Callable: [description]
+            Callable: A function `exclude_extension(model: str) -> bool`.
         """
         if extensions is None:
             extensions = set()
