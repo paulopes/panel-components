@@ -62,8 +62,8 @@ class TemporaryResources:  # pylint: disable=(too-many-instance-attributes
         ['body {color: black}']
         >>> "body {color: white}" in temporary_header
         True
-        >>> "body {color: black}" not in temporary_header
-        True
+        >>> "body {color: black}" in temporary_header
+        False
 
         Please note that the `pn.io.resources.Resources().render` function is what is normally
         used by Bokeh and Panel to render the resources (css+js) in the head of the template. Thus
