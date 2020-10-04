@@ -1,4 +1,9 @@
+"""Utility module. The primary content is functionality to handle serving or inlining static
+assets"""
 # -*- coding: utf-8 -*-
+# Todo: Solve mypy errors
+# Todo: solve pylint errors
+
 from __future__ import division, print_function
 
 import base64
@@ -105,7 +110,8 @@ def _read_file(src_path: Optional[str] = None) -> str:
 
 # Todo:
 # This function is very complicated and could benefit from a refactoring
-# Consider refactoring into find_src_file, find_dst_filde and file_src_and_dst_file functions
+# Consider refactoring into find_src_file, find_dst_filde and file_src_and_dst_file functions as
+# it has too-many-branches
 def find_src_file(
     filename: str,
     src_folder: str,
@@ -145,8 +151,8 @@ def find_src_file(
             if not os.path.exists(dst_folder):
                 try:
                     os.makedirs(dst_folder)
-                except OSError as e:  # Guard against race condition
-                    if e.errno != errno.EEXIST:
+                except OSError as exception:  # Guard against race condition
+                    if exception.errno != errno.EEXIST:
                         raise
 
     src_file = os.path.join(src_folder, *file_path_elements)
@@ -168,8 +174,7 @@ def find_src_file(
                 break
     if src_exists:
         return src_file, dst_file
-    else:
-        return None, dst_file
+    return None, dst_file
 
 
 # Todo: Describe why you want to load content with script tags. And not just .js
@@ -250,8 +255,8 @@ def make_available(
         if not os.path.exists(dst_folder):
             try:
                 os.makedirs(dst_folder)
-            except OSError as e:  # Guard against race condition
-                if e.errno != errno.EEXIST:
+            except OSError as exception:  # Guard against race condition
+                if exception.errno != errno.EEXIST:
                     raise
         shutil.copyfile(src_file, dst_file)
 
@@ -282,6 +287,7 @@ def can_make_inline_uri(src_file: str) -> bool:
 
 
 # Todo: Remove dst_folder as it is not used
+# and refactor as it has too-many-branches
 def make_inline_uri(
     src_file: str,
     src_folder: str,
@@ -368,4 +374,4 @@ def make_inline_uri(
     return return_value
 
 
-make_inline_uri.memo = dict()
+make_inline_uri.memo = dict() # type: ignore

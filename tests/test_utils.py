@@ -1,8 +1,9 @@
+# pylint: disable=redefined-outer-name,protected-access
+# pylint: disable=missing-function-docstring,missing-module-docstring,missing-class-docstring
 import os
 import pathlib
 
 import pytest
-from panel_components import file
 from panel_components.utils import (
     IS_A_JUPYTER_NOTEBOOK,
     _read_file,
@@ -121,7 +122,7 @@ def test_find_src_file(filename, src_folder, src_file):
 
     # Then
     assert src == src_file
-    assert dst == None
+    assert dst is None
 
 
 def test_find_asset_file(tmp_path: pathlib.Path, src_folder):
@@ -143,7 +144,7 @@ def test_find_asset_file(tmp_path: pathlib.Path, src_folder):
 
     # Then
     assert src == asset_file
-    assert dst == None
+    assert dst is None
 
 
 def test_find_dst_file(tmp_path: pathlib.Path):
@@ -165,7 +166,7 @@ def test_find_dst_file(tmp_path: pathlib.Path):
     src, dst = find_src_file(filename=filename, src_folder=src_folder, dst_folder=dst_folder)
 
     # Then
-    assert src == None
+    assert src is None
     assert dst == dst_file
 
 
@@ -179,7 +180,7 @@ def test_get_inline_css(filename, src_folder, src_file_path):
     assert get_inline_css(filename, src_folder) == "<style>body {background: text}\\00003c/style>"
 
 
-def test_make_available(filename, src_folder, src_file, tmp_path):
+def test_make_available(filename, src_folder, src_file, tmp_path): # pylint: disable=unused-argument
     dst_path = tmp_path / "desty"
     dst_folder = str(dst_path)
     dst_file = dst_path / filename
