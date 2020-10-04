@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function, division
+from __future__ import division, print_function
 
-import os
-import html
-import shutil
 import base64
+import errno
+import html
+import os
+import shutil
+from typing import Any, List, Optional
 
 try:
     # Detect if running inside a Jupyter notebook
@@ -16,29 +18,83 @@ except NameError:
     IS_A_JUPYTER_NOTEBOOK = False
 
 
-def is_a_number(x):
+def is_a_number(value: Any):
+    """Returns True if the value is a number
+
+    Examples:
+
+    >>> is_a_number(1.1)
+    True
+    >>> is_a_number("hello world")
+    False
+
+    Args:
+        x (Any): Any kind of value
+
+    Returns:
+        [bool]: True if the value is a number. Otherwise False
+    """
     try:
-        return bool(0 == x * 0)
+        return bool(0 == value * 0)
     except:
         return False
 
 
-def template_escape(text):
+# Todo: Explain why }} should not be escaped
+def template_escape(text: str) -> str:
+    """Returns the text escaped an ready for usage in a Jinja template
+
+    Escapes {{, {% and {#
+
+    Example
+
+    >>> template_escape("{% value }")
+    "{{'{%'}} value }"
+
+    Args:
+        text (str): The text to escape
+
+    Returns:
+        str: Escaped text
+    """
     escaped_text = (
-        text.replace("{{", "{{'{{'}}")
-        .replace("{%", "{{'{%'}}")
-        .replace("{#", "{{'{#'}}")
+        text.replace("{{", "{{'{{'}}").replace("{%", "{{'{%'}}").replace("{#", "{{'{#'}}")
     )
     return escaped_text
 
 
-def get_dir_name(folder=None):
+# Todo:
+# The terminology dir and folder is used synonomously in this module
+# Consider renaming simplifying by renaming get_dir_name to get_folder_name
+def get_dir_name(folder: Optional[str] = None) -> str:
+    """Returns the last name of the folder
+
+    Example:
+    >>> get_dir_name("/c/repos/panel-components")
+    'panel-components'
+
+    Args:
+        folder (Optional[str], optional): The name of the folder. If None the folder is set to the
+            working folder. Defaults to None.
+
+    Returns:
+        [str]: The folder name
+    """
     if not folder:
         folder = os.getcwd()
     return folder.replace("/", os.sep).rstrip(os.sep).split(os.sep)[-1]
 
 
-def _read_file(src_path):
+# Todo: Consider renaming src_path to path or file_path as this is more specific
+def _read_file(src_path: Optional[str] = None) -> str:
+    """Returns the text content of the src_path if it is a file
+
+    Args:
+        src_path (Optional[str], optional): The path to the file. Defaults to None.
+
+    Returns:
+        str: The text content of the file
+    """
     file_contents = ""
     if src_path and os.path.isfile(src_path):
         with open(src_path, encoding="utf8") as src_file:
@@ -47,7 +103,15 @@ def _read_file(src_path):
     return file_contents
 
 
-def find_src_file(filename, src_folder, dst_folder=None, asset_folders=None):
+# Todo:
+# This function is very complicated and could benefit from a refactoring
+# Consider refactoring into find_src_file, find_dst_filde and file_src_and_dst_file functions
+def find_src_file(
+    filename: str,
+    src_folder: str,
+    dst_folder: Optional[str] = None,
+    asset_folders: Optional[List[str]] = None,
+):
     filename = filename.strip()
 
     file_path_elements = [
@@ -183,9 +247,7 @@ def make_inline_uri(src_file, src_folder, dst_folder, asset_folders=None):
             if file_format in {"png", "gif", "jpeg"}:
                 uri_start = "data:image/{};charset=utf8;base64,".format(file_format)
             elif file_format in {"ttf", "otf", "woff", "woff2", "eot"}:
-                uri_start = "data:application/x-font-{};charset=utf8;base64,".format(
-                    file_format
-                )
+                uri_start = "data:application/x-font-{};charset=utf8;base64,".format(file_format)
             else:
                 return ""
             base64encoded = base64.b64encode(open(src_file, "rb").read())
