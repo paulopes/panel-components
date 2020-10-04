@@ -6,7 +6,7 @@ import errno
 import html
 import os
 import shutil
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Text, Tuple
 
 try:
     # Detect if running inside a Jupyter notebook
@@ -111,7 +111,21 @@ def find_src_file(
     src_folder: str,
     dst_folder: Optional[str] = None,
     asset_folders: Optional[List[str]] = None,
-):
+) -> Tuple[Optional[Text], Optional[Text]]:
+    """Returns a tuple of the src file and the destination file. If the file does not exist None
+    is returned.
+
+    Args:
+        filename (str): The name of the file. For example 'style.css'
+        src_folder (str): The path to the source folder. For example 'www'.
+        dst_folder (Optional[str], optional): The path to the destination folder. For example
+            'static'. Defaults to None.
+        asset_folders (Optional[List[str]], optional): A list of extra source folders.
+            Defaults to None.
+
+    Returns:
+        Tuple[Optional[Text], Optional[Text]]: The (src_file, dst_file) tuple.
+    """
     filename = filename.strip()
 
     file_path_elements = [
@@ -158,17 +172,79 @@ def find_src_file(
         return None, dst_file
 
 
-def get_inline_js(filename, src_folder, dst_folder=None, asset_folders=None):
+# Todo: Describe why you want to load content with script tags. And not just .js
+# And why the replacement is nescessary
+# Also remove dst_folder as input as it is not needed.
+def get_inline_js(
+    filename: str,
+    src_folder: str,
+    dst_folder: Optional[str] = None,
+    asset_folders: Optional[List[str]] = None,
+) -> str:
+    """Locates and returns the content of the source file.
+
+    Note that "</script" is replaced with r"\u003c/script"
+
+    Args:
+        filename (str): The name of the file. For example 'main.js' or 'main.html'
+        src_folder (str): The path to the source folder. For example 'www'.
+        dst_folder (Optional[str], optional): The path to the destination folder. For example
+            'static'. Defaults to None.
+        asset_folders (Optional[List[str]], optional): A list of extra source folders.
+            Defaults to None.
+
+
+    Returns:
+        [str]: The inline js
+    """
     src_file, _ = find_src_file(filename, src_folder, dst_folder, asset_folders)
     return _read_file(src_file).replace("</script", r"\u003c/script")
 
 
-def get_inline_css(filename, src_folder, dst_folder=None, asset_folders=None):
+# Todo: Describe why you want to load content with style tags. And not just .css
+# And why the replacement is nescessary
+def get_inline_css(
+    filename: str,
+    src_folder: str,
+    dst_folder: Optional[str] = None,
+    asset_folders: Optional[List[str]] = None,
+) -> str:
+    """Locates and returns the content of the source file.
+
+    Note that "</style" is replaced with r"\u003c/style"
+
+    Args:
+        filename (str): The name of the file. For example 'style.css' or 'style.html'
+        src_folder (str): The path to the source folder. For example 'www'.
+        dst_folder (Optional[str], optional): The path to the destination folder. For example
+            'static'. Defaults to None.
+        asset_folders (Optional[List[str]], optional): A list of extra source folders.
+            Defaults to None.
+
+
+    Returns:
+        [str]: The inline css
+    """
     src_file, _ = find_src_file(filename, src_folder, dst_folder, asset_folders)
     return _read_file(src_file).replace("</style", r"\00003c/style")
 
 
-def make_available(filename, src_folder, dst_folder, asset_folders):
+def make_available(
+    filename: str,
+    src_folder: str,
+    dst_folder: Optional[str] = None,
+    asset_folders: Optional[List[str]] = None,
+):
+    """Locates the source file and makes sure it's available in the destionation folder
+
+    Args:
+        filename (str): The name of the file. For example 'main.js' or 'main.html'
+        src_folder (str): The path to the source folder. For example 'www'.
+        dst_folder (Optional[str], optional): The path to the destination folder. For example
+            'static'. Defaults to None.
+        asset_folders (Optional[List[str]], optional): A list of extra source folders.
+            Defaults to None.
+    """
     src_file, dst_file = find_src_file(filename, src_folder, dst_folder, asset_folders)
     if src_file and not os.path.exists(dst_file):
         if not os.path.exists(dst_folder):
@@ -180,7 +256,16 @@ def make_available(filename, src_folder, dst_folder, asset_folders):
         shutil.copyfile(src_file, dst_file)
 
 
-def can_make_inline_uri(src_file):
+# Todo: Rename src_file to file. This function works on any file. Not only 'src' files.
+def can_make_inline_uri(src_file: str) -> bool:
+    """Returns whether or not the file can be transformed to an inline uri
+
+    Args:
+        src_file (str): The path to the source file
+
+    Returns:
+        bool: Returns True if the file can be transformed
+    """
     file_format = src_file.rstrip().split(".")[-1].lower()
     return file_format in {
         "png",
@@ -196,10 +281,36 @@ def can_make_inline_uri(src_file):
     }
 
 
-def make_inline_uri(src_file, src_folder, dst_folder, asset_folders=None):
+# Todo: Remove dst_folder as it is not used
+def make_inline_uri(
+    src_file: str,
+    src_folder: str,
+    dst_folder: Optional[str] = None,
+    asset_folders: Optional[List[str]] = None,
+) -> str:
+    """Returns an inline uri of the file
+
+    Example:
+
+    >>> import pathlib
+    >>> src_folder = str(pathlib.Path(__file__).parent.parent / "tests" / "fixtures")
+    >>> make_inline_uri("detr.jpeg", src_folder)[0:50]
+    'data:image/jpeg;charset=utf8;base64,/9j/4AAQSkZJRg'
+
+    Args:
+        filename (str): The name of the file. For example 'image.png'.
+        src_folder (str): The path to the source folder. For example 'www'.
+        dst_folder (Optional[str], optional): The path to the destination folder. For example
+            'static'. Defaults to None.
+        asset_folders (Optional[List[str]], optional): A list of extra source folders.
+            Defaults to None.
+
+    Returns:
+        [str]: The inline uri
+    """
     src_file = src_file.strip()
-    if src_file in make_inline_uri.memo:
-        return make_inline_uri.memo[src_file]
+    if src_file in make_inline_uri.memo:  # type: ignore
+        return make_inline_uri.memo[src_file]  # type: ignore
 
     memo_key = src_file
     return_value = ""
@@ -252,7 +363,7 @@ def make_inline_uri(src_file, src_folder, dst_folder, asset_folders=None):
                 return ""
             base64encoded = base64.b64encode(open(src_file, "rb").read())
             return_value = uri_start + base64encoded.decode()
-        make_inline_uri.memo[memo_key] = return_value
+        make_inline_uri.memo[memo_key] = return_value  # type: ignore
 
     return return_value
 
