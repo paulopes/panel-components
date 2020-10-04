@@ -163,6 +163,7 @@ class Component:
 
         self._append_head_no_nb_css = dict()
         self._append_head_no_nb_js = dict()
+        self._append_head_no_nb_module = dict()
 
         self._pyviz_extensions = set()
 
@@ -288,6 +289,16 @@ class Component:
         for child in self.children:
             append_head_no_nb_js.update(child.get_append_head_no_nb_js())
         return append_head_no_nb_js
+
+    def append_head_no_nb_module(self, **files):
+        self._append_head_no_nb_module.update(files)
+        return self
+
+    def get_append_head_no_nb_module(self):
+        append_head_no_nb_module = self._append_head_no_nb_module.copy()
+        for child in self.children:
+            append_head_no_nb_module.update(child.get_append_head_no_nb_module())
+        return append_head_no_nb_module
 
     def pyviz_extensions(self, *extensions):
         extensions_no_spaces = [item.split() for item in extensions if item]
@@ -578,6 +589,15 @@ class Component:
                 dst_folder=self._dst_folder,
                 asset_folders=asset_folders,
             )
+        append_head_no_nb_module = self.get_append_head_no_nb_module()
+        for item_name in append_head_no_nb_module:
+            item = append_head_no_nb_module[item_name]
+            make_available(
+                item,
+                src_folder=self._src_folder,
+                dst_folder=self._dst_folder,
+                asset_folders=asset_folders,
+            )
         append_head_no_nb_css = self.get_append_head_no_nb_css()
         for item_name in append_head_no_nb_css:
             item = append_head_no_nb_css[item_name]
@@ -602,6 +622,24 @@ class Component:
                 template += (
                     """
 <script type="text/javascript">
+"""
+                    + get_inline_js(
+                        item, src_folder=self._src_folder, asset_folders=asset_folders,
+                    )
+                    + "</script>"
+                )
+        append_head_no_nb_module = self.get_append_head_no_nb_module()
+        for item_name in append_head_no_nb_module:
+            item = append_head_no_nb_module[item_name]
+            if self.main:
+                template += """
+<script src="/{}/{}/{}" type="module" crossorigin="anonymous"></script>""".format(
+                    self.main, self._dst_folder, item
+                )
+            else:
+                template += (
+                    """
+<script type="module">
 """
                     + get_inline_js(
                         item, src_folder=self._src_folder, asset_folders=asset_folders,
